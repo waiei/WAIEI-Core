@@ -1,0 +1,2 @@
+# WAIEI-Core
+WAIEI CoreはStepMania5のテーマ開発において、簡単に便利な機能を実装することができるスクリプトファイル一式です
