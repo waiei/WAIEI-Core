@@ -1,4 +1,4 @@
-![WAIEI Coreロゴ](sample/img/core-logo.png "WAIEI Coreロゴ")
+<img src="sample/img/core-logo.png" alt="WAIEI Coreロゴ" title="WAIEI Coreロゴ">
 
 # WAIEI Core
 WAIEI CoreはStepMania5のテーマ開発において、簡単に便利な機能を実装することができるスクリプトファイル一式です
