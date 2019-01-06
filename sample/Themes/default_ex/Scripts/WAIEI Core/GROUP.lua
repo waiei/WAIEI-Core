@@ -70,7 +70,7 @@ local function getSongValue(parameter, song)
 	
 	for i=1, #values do
 		-- 取得対象のフォルダがある場合
-		if string.find(string.lower(values[i]), '|'..lowFolderName, 0, true) then
+		if string.find(string.lower(values[i])..'|', '|'..lowFolderName..'|', 0, true) then
 			return split('|', values[i])[1]
 		end
 	end
@@ -105,10 +105,10 @@ local function scanGroupSongs(groupName)
 	-- グループ名
 	local name = group:Parameter('name')
 	groupNames[groupName] = (name ~= '') and name or groupName
+	local songs = SONGMAN:GetSongsInGroup(groupName)
 	
 	-- 楽曲カラー
 	local menuColor = group:Parameter('menucolor')
-	local songs = SONGMAN:GetSongsInGroup(groupName)
 	for i=1, #songs do
 		if not menuColors[songs[i]:GetSongDir()] then
 			local colorString = getSongValue(menuColor, songs[i])
@@ -117,7 +117,6 @@ local function scanGroupSongs(groupName)
 	end
 	-- MeterType
 	local meterType = group:Parameter('metertype')
-	local songs = SONGMAN:GetSongsInGroup(groupName)
 	for i=1, #songs do
 		if not meterTypes[songs[i]:GetSongDir()] then
 			local meterString = getSongValue(meterType, songs[i])
@@ -126,7 +125,6 @@ local function scanGroupSongs(groupName)
 	end
 	-- オリジナルグループ名
 	local originalName = group:Parameter('originalname')
-	local songs = SONGMAN:GetSongsInGroup(groupName)
 	for i=1, #songs do
 		if not originalNames[songs[i]:GetSongDir()] then
 			local nameString = getSongValue(originalName, songs[i])
@@ -139,26 +137,31 @@ end
 --[[
 	すべての楽曲をスキャン
 --]]
-local function scanFullSongs(self)
+local isScanned = false;
+local function scanAllSongs(self)
 	local groups = SONGMAN:GetSongGroupNames()
 	for i=1, #groups do
 		scanGroupSongs(groups[i])
 	end;
+    isScanned = true;
 end
 
 --[[
 	グループ名を取得
-	事前にスキャンを行っていない場合はフォルダ名が返される
+	事前にスキャンを行っていない場合は再スキャンされる
 	@param	string	groupName	グループフォルダ名
 	@return	color
 --]]
 local function getGroupName(self, groupName)
+    if not isScanned then
+        scanAllSongs(self)
+    end
 	return groupNames[groupName] or groupName
 end
 
 --[[
 	楽曲カラーを取得
-	事前にスキャンを行っていない場合はデフォルト値が返される
+	事前にスキャンを行っていない場合は再スキャンされる
 	@param	song		song		楽曲
 	@return	color
 --]]
@@ -166,12 +169,15 @@ local function getSongMenuColor(self, song)
 	if not song then
 		return defaultMenuColors
 	end
+    if not isScanned then
+        scanAllSongs(self)
+    end
 	return menuColors[song:GetSongDir()] or defaultMenuColors
 end
 
 --[[
 	MeterTypeを取得
-	事前にスキャンを行っていない場合はデフォルト値が返される
+	事前にスキャンを行っていない場合は再スキャンされる
 	@param	song		song		楽曲
 	@return	string
 --]]
@@ -179,12 +185,15 @@ local function getSongMeterType(self, song)
 	if not song then
 		return defaultMeterTypes
 	end
+    if not isScanned then
+        scanAllSongs(self)
+    end
 	return meterTypes[song:GetSongDir()] or defaultMeterTypes
 end
 
 --[[
 	オリジナルグループ名を取得
-	事前にスキャンを行っていない場合はデフォルト値が返される
+	事前にスキャンを行っていない場合は再スキャンされる
 	@param	song		song		楽曲
 	@return	string
 --]]
@@ -192,6 +201,9 @@ local function getSongOriginalNames(self, song)
 	if not song then
 		return ''
 	end
+    if not isScanned then
+        scanAllSongs(self)
+    end
 	return originalNames[song:GetSongDir()] or song:GetGroupName()
 end
 
@@ -341,7 +353,7 @@ return {
 	Open         = openGroupFile,
 	Value        = getValue,
 	FolderName   = getSongFolderName,
-	Scan         = scanFullSongs,
+	Scan         = scanAllSongs,
 	GroupName    = getGroupName,
 	MenuColor    = getSongMenuColor,
 	MeterType    = getSongMeterType,
