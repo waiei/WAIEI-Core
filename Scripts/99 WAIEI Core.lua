@@ -8,6 +8,21 @@ function _SYS2(value)
 	SCREENMAN:SystemMessage(Serialize(value))
 end
 
+function _LOG(text)
+	file = RageFileUtil:CreateRageFile()
+	file:Open('WAIEI Core.log', 2)
+	file:Write(text)
+	file:Close()
+	file:destroy()
+end
+
+-- ライブラリ関連
+local libDir  = THEME:GetCurrentThemeDirectory()..'Scripts/lib/'
+YA_LIB = {
+	QR     = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/qrencode.lua"),
+	BASE64 = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/base64.lua"),
+}
+
 local coreDir = THEME:GetCurrentThemeDirectory()..'Scripts/WAIEI Core/'
 
 -- バージョン関連
