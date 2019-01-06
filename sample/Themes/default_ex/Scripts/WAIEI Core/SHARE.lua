@@ -1,7 +1,8 @@
 -- Share
 
 -- Twitterスコア連携用URL
-local sendUrl = 'https://sm.waiei.net/systems/score'
+local sendUrl = 'https://sm.waiei.net/systems/score_v2'
+--local sendUrl = 'http://localhost/systems/score_v2'
 
 local defaultCodes = {
 	Share = {'Share', 'Share2'},
@@ -40,7 +41,7 @@ end;
 --]]
 local function validateAndGetValues(player, datetimeTable)
     local playerName = PROFILEMAN:GetPlayerName(player);
-    if not pname or pname == '' then
+    if not playerName or playerName == '' then
 		-- Profile設定必須
 		return {Error = 'name'}
 	end
@@ -93,9 +94,10 @@ local function validateAndGetValues(player, datetimeTable)
 	local mode       = GAMESTATE:GetCurrentStyle():GetName()
 	local timing     = GetTimingDifficulty()
 	local life       = GetLifeDifficulty()
-	local playerName = PROFILEMAN:GetPlayerName(player)
 	local guid       = pr:GetGUID()
-	local title      = song:GetDisplayFullTitle()
+	local difficulty = Enum.Reverse(Difficulty)[st:GetDifficulty()]
+    -- 120バイトでサブタイトルを削る
+	local title      = (string.len(song:GetDisplayFullTitle()) > 120) and song:GetDisplayMainTitle() or song:GetDisplayFullTitle()
 	local artist     = song:GetDisplayArtist()
 	-- テーマ名
 	local theme = THEME:GetCurThemeName()
@@ -107,7 +109,6 @@ local function validateAndGetValues(player, datetimeTable)
 	local checkRadar = st:GetRadarValues(player)
 	local scoreMode  = 'Default'
 	local ultimate   = 0
-	local difficulty = ToEnumShortString(st:GetDifficulty())
 	-- テーマカラー
 	local sub   = ''
 	
@@ -196,29 +197,28 @@ local function validateAndGetValues(player, datetimeTable)
 		Miss = pss:GetTapNoteScores('TapNoteScore_Miss'),
 		Held = pss:GetHoldNoteScores('HoldNoteScore_Held'),
 	}
-	
 	local maxCombo = pss:MaxCombo()
 	local score = pss:GetScore()
 	return {
 		fn          = folder,
-		gn          = createUrl((original == '') and string.lower(group) or string.lower(original)),
-		package     = createUrl(packageName),
+		gn          = (original == '') and string.lower(group) or string.lower(original),
+		package     = packageName,
 		color       = menuColor,
-		mt          = createUrl(string.upper(meterType)),
-		style       = createUrl(string.upper(style)),
-		mode        = createUrl(string.upper(mode)),
+		mt          = string.upper(meterType),
+		style       = string.upper(style),
+		mode        = string.upper(mode),
 		timing      = timing,
 		life        = life,
 		hscore      = highScore,
 		level       = meter,
-		scoremode   = createUrl(string.upper(scoreMode)),
+		scoremode   = string.upper(scoreMode),
 		ultimate    = ultimate,
-		difficulty  = string.upper(difficulty),
+		difficulty  = difficulty,
 		judge       = judgeLabel,
 		fc          = fullCombo,
 		grade       = grade,
-		option      = createUrl(option),
-		dp          = createUrl(dancePoint),
+		option      = option,
+		dp          = dancePoint,
 		r_str       = radar['Stream'],
 		r_vol       = radar['Voltage'],
 		r_air       = radar['Air'],
@@ -233,12 +233,12 @@ local function validateAndGetValues(player, datetimeTable)
 		j_ok        = noteScore['Held'],
 		j_mc        = maxCombo,
 		score       = score,
-		theme       = createUrl(theme),
-		sub         = createUrl(sub),
+		theme       = theme,
+		sub         = sub,
 		guid        = guid,
-		player      = createUrl(playerName),
-		title       = createUrl(title),
-		artist      = createUrl(artist),
+		player      = playerName,
+		title       = title,
+		artist      = artist,
 		md5         = md5,	-- 整合性チェックのMD5はうまく処理できていないので現在未実装
 		tm_y        = datetimeTable['year'],
 		tm_m        = datetimeTable['month'],
@@ -249,23 +249,58 @@ local function validateAndGetValues(player, datetimeTable)
 end
 
 --[[
-	リザルト連携用URLを生成
+    QRコード対応版のURLクエリに変更する
 --]]
-local function generateUrl(self, player, datetimeTable)
-	local params = validateAndGetValues(player, datetimeTable)
-	local url = sendUrl..'?'
-	for key,value in pairs(params) do
-		url = url..key..'='..value..'&'
+local function convertQueryVersion2(data)
+    local b64 = YA_LIB.BASE64
+    local values = {
+        -- フォルダ
+        f = data.fn,
+        -- グループ
+        g = data.gn,
+        -- パッケージ
+        p = data.package,
+        -- タイトル
+        t = data.title,
+        -- アーティスト
+        a = data.artist,
+        -- プレイヤー名
+        pl = data.player,
+        -- テーマ(テーマ名、カラー名 ':'区切り)
+        tm = table.concat({data.theme, data.sub}, ":"),
+        -- PlayerOption
+        po = data.option,
+        -- DateTime(YYYY/mm/dd HH:ii)
+        dt = string.format("%04d/%02d/%02d %02d:%02d", data.tm_y, data.tm_m, data.tm_d, data.tm_h, data.tm_mi),
+        -- GUID
+        id = data.guid,
+        -- レーダー(STREAM, VOLTAGE, AIR, FREEZE, CHAOS ':'区切り)
+        rd = table.concat({data.r_str, data.r_vol, data.r_air, data.r_frz, data.r_cha}, ":"),
+        -- 判定(W1, W2, W3, W4, W5, Miss, OK, MaxCombo ':'区切り)
+        jd = table.concat({data.j_w1, data.j_w2, data.j_w3, data.j_w4, data.j_w5, data.j_ms, data.j_ok, data.j_mc}, ":"),
+        -- 設定(TimingDifficulty, LifeDifficulty, Ultimate, JudgementLabel ':'区切り)
+        cf = table.concat({data.timing, data.life, data.ultimate, data.judge}, ":"),
+        -- ゲームモード・曲情報(GameStyle, GameMode, MeterType, Difficulty, Level ':'区切り)
+        gm = table.concat({data.style, data.mode, data.mt, data.difficulty, data.level}, ":"),
+        -- スコア(ScoreMode, Score, DancePoint, HighScore, Grade ':'区切り)
+        sc = table.concat({data.scoremode, data.score, data.dp, data.hscore, data.grade, data.fc}, ":"),
+        -- 色
+        cl = data.color,
+        -- ハッシュ(未実装)
+        hs = '',
+    }
+    local query = ''
+	for key,value in pairs(values) do
+		query = query..key..'='..b64:ToBase64(value)..'&'
 	end
 	-- 最後の&を消して返却
-	return string.sub(url, 1, -1)
+	return string.sub(query, 1, -2)
 end
 
 --[[
-	リザルト連携用URLへアクセス
+	リザルト連携用URLを生成
 --]]
-local function shareResult(...)
-	local self, player, datetimeTable = ...
+local function generateUrl(self, player, datetimeTable)
 	if not datetimeTable then
 		datetimeTable = {
 			year   = Year(),
@@ -275,24 +310,43 @@ local function shareResult(...)
 			minute = Minute(),
 		}
 	end
-	local url = generateUrl(self, player, datetimeTable)
-	file = RageFileUtil:CreateRageFile()
-	file:Open('WAIEI Core.log', 2)
-	file:Write(url)
-	file:Close()
-	file:destroy()
+	local params = validateAndGetValues(player, datetimeTable)
+    return sendUrl..'?'..convertQueryVersion2(params)
+    --[[
+	local url2 = '!'..sendUrl..'?'
+	for key,value in pairs(params) do
+		url = url..key..'='..value..'&'
+		url2 = url2..'|'..value
+	end
+	_SYS(#url2)
+	--_LOG(url)
+	-- 最後の&を消して返却
+	return string.sub(url, 1, -1)
+    --]]
+end
+
+--[[
+	リザルト連携用URLへアクセス
+--]]
+local function shareResult(...)
+	local self, url = ...
+	--local url = generateUrl(self, player, datetimeTable)
 	GAMESTATE:ApplyGameCommand("urlnoexit,"..url)
 end
 
 --[[
 	Evaluation用Actor
-	@param	bool	enabledSpeed		ハイスピード変更の有効フラグ（未指定の場合も有効）
-	@param	bool	enabledReverse		スクロール方向変更の有効フラグ（未指定の場合も有効）
-	@param	table	codes			Metricsで定義したCode（{SpeedUp={string}, SpeedDown={string}, ScrollStandard={string}, ScrollReverse={string},}）
+	@param	bool	enabledShare	リザルト共有機能の有効フラグ（未指定の場合も有効）
+	@param	table	codes		Metricsで定義したCode（{Share={string}, Share2={string}}）
 --]]
 local shareDatetime = {}
+local shareUrl = {nil, nil}
 local function shareActor(...)
 	local self, enabledShare, codes = ...
+    -- nil の時は有効
+    if enabledShare == false then
+        return Def.Actor()
+    end
 	if not codes then
 		codes = defaultCodes
 	end
@@ -305,12 +359,19 @@ local function shareActor(...)
 				hour   = Hour(),
 				minute = Minute(),
 			}
+            shareUrl = {nil, nil}
+            for player in ivalues(PlayerNumber) do
+                if GAMESTATE:IsPlayerEnabled(player) then
+                    shareUrl[(player == PLAYER_1) and 1 or 2] = generateUrl(self, player, shareDatetime)
+                end
+            end
 		end;
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
 			local codeShare = inTable(params.Name, codes['Share'])
-			if enabledShare ~= false and codeShare then
-				shareResult(self, player, shareDatetime)
+            local url = shareUrl[(player == PLAYER_1) and 1 or 2]
+			if codeShare and url then
+				shareResult(self, shareUrl[(player == PLAYER_1) and 1 or 2])
 			end
 		end;
 	}
