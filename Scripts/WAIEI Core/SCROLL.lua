@@ -287,6 +287,9 @@ local actorSpeedParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
 local actorReverseParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
 local function scrollActor(...)
 	local self,enabledSpeed,enabledReverse,codes = ...
+    if enabledSpeed == false and enabledReverse == false then
+        return	Def.Actor{}
+    end
 	if not codes then
 		codes = defaultCodes
 	end
