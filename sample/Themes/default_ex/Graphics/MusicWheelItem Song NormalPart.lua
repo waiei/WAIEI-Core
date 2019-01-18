@@ -1,6 +1,15 @@
+local normalPart = ''
+local colorPart = ''
+if YA_VER:Version() < 5100 then
+	normalPart = '../../default/Graphics/MusicWheelItem Song NormalPart'
+	colorPart  = '../../default/Graphics/MusicWheelItem Song ColorPart'
+else
+	normalPart = '_blank'
+	colorPart  = '../../default/Graphics/MusicWheelItem Song NormalPart'
+end
 return Def.ActorFrame{
-	LoadActor('../../default/Graphics/MusicWheelItem Song NormalPart');
-	LoadActor('../../default/Graphics/MusicWheelItem Song ColorPart')..{
+	LoadActor(normalPart);
+	LoadActor(colorPart)..{
 		SetCommand=function(self,params)
 			local song = params.Song
 			if song then

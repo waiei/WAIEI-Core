@@ -2,8 +2,14 @@ local banner
 local w	-- BannerWidth
 local h	-- BannerHeight
 local c	-- BannerCropSize
+local bannerFrame
+if YA_VER:Version() < 5100 then
+	bannerFrame = '../../default/Graphics/ScreenSelectMusic BannerFrame'
+else
+	bannerFrame = '_blank'
+end;
 return Def.ActorFrame{
-	LoadActor('../../default/Graphics/ScreenSelectMusic BannerFrame');
+	LoadActor(bannerFrame);
 	Def.Quad{
 		InitCommand = cmd(visible,false);
 		ChangeBannerMessageCommand = cmd(visible,true;zoomto,256,80;diffuse,0,0,0,0.66);
