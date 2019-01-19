@@ -2,11 +2,15 @@ local banner
 local w	-- BannerWidth
 local h	-- BannerHeight
 local c	-- BannerCropSize
+--local bW = Extended:Is50() and 256 or 290
+local bW = 256
+local bH = 80
+local bannerRatio = bH / bW
 local bannerFrame
-if YA_VER:Version() < 5100 then
+if Extended:Is50() then
 	bannerFrame = '../../default/Graphics/ScreenSelectMusic BannerFrame'
 else
-	bannerFrame = '_blank'
+	bannerFrame = '../../_fallback/Graphics/_blank'
 end;
 return Def.ActorFrame{
 	LoadActor(bannerFrame);
@@ -28,11 +32,11 @@ return Def.ActorFrame{
 				-- 縦に長いバナーは切り抜く （横に長い場合は縮小）
 				w = self:GetWidth()
 				h = self:GetHeight()
-				if h/w < 0.3125 then
-					self:scaletofit(-128, -40, 128, 40)
+				if h/w < bannerRatio then
+					self:scaletofit(-bW/2, -bH/2, bW/2, bH/2)
 				else
-					c = (h*256/w-80) / (h*256/w) /2
-					self:scaletocover(-128, -40, 128, 40)
+					c = (h*bW/w-bH) / (h*bW/w) /2
+					self:scaletocover(-bW/2, -bH/2, bW/2, bH/2)
 					self:croptop(c)
 					self:cropbottom(c)
 				end
@@ -46,11 +50,11 @@ return Def.ActorFrame{
 			self:stoptweening();
 			self:rate(0.5);
 			self:position(0);
-			if h/w < 0.3125 then
-				self:scaletofit(-128, -40, 128, 40)
+			if h/w < bannerRatio then
+				self:scaletofit(-bW/2, -bH/2, bW/2, bH/2)
 			else
-				c = (h*256/w-80) / (h*256/w) /2
-				self:scaletocover(-128, -40, 128, 40)
+				c = (h*bW/w-bH) / (h*bW/w) /2
+				self:scaletocover(-bW/2, -bH/2, bW/2, bH/2)
 				self:croptop(c)
 				self:cropbottom(c)
 			end

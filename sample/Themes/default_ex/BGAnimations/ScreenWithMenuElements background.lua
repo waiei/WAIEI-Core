@@ -1,4 +1,4 @@
-if YA_VER:Version() < 5100 then
+if Extended:Is50() then
 	-- 5.0系
 	return Def.ActorFrame {
 	  FOV=90;

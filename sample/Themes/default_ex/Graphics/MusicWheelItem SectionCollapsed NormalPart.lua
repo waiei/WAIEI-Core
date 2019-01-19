@@ -1,10 +1,10 @@
 local normalPart = ''
 local colorPart = ''
-if YA_VER:Version() < 5100 then
+if Extended:Is50() then
 	normalPart = '../../default/Graphics/MusicWheelItem SectionCollapsed NormalPart'
 	colorPart  = '../../default/Graphics/MusicWheelItem SectionCollapsed ColorPart'
 else
-	normalPart = '_blank'
+	normalPart = '../../_fallback/Graphics/_blank'
 	colorPart  = '../../default/Graphics/MusicWheelItem SectionCollapsed NormalPart'
 end
 return Def.ActorFrame{
@@ -28,7 +28,7 @@ return Def.ActorFrame{
 				self:shadowlength(1)
 				self:shadowcolor(Color('Black'))
 				self:settext(text)
-				if YA_VER:Version() < 5100 then
+				if Extended:Is50() then
 					self:horizalign(center)
 					self:maxwidth(194)
 					self:x(-38)
