@@ -10,4 +10,28 @@ return Def.ActorFrame{
 		end;
 	};
 	--]]
+	LoadActor('../../default/BGAnimations/ScreenEvaluation overlay');
+	Def.ActorFrame{
+		InitCommand=cmd(x,SCREEN_CENTER_X;y,SCREEN_HEIGHT*(Extended:Is50() and 0.84 or 0.9));
+		Def.Quad{
+			InitCommand=function(self)
+				self:zoomto(SCREEN_WIDTH*0.07,SCREEN_HEIGHT*0.04)
+				self:diffuse(Color('Outline'))
+			end
+		};
+		Def.Quad{
+			InitCommand=function(self)
+				self:zoomto(SCREEN_WIDTH*0.07-4,SCREEN_HEIGHT*0.04-4)
+				self:glowshift()
+				self:diffuse(0,0,0,0.5)
+			end
+		};
+		LoadFont('Common Normal')..{
+			Text = '&MENUUP; Share';
+			InitCommand=function(self)
+				self:diffuse(Color('White'))
+				self:zoom(Extended:Is50() and 0.4 or 0.7);
+			end
+		};
+	}
 }

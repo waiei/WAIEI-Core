@@ -12,4 +12,5 @@ return Def.ActorFrame{
 			_SYS(ToEnumShortString(params.Player)..' Scroll:'..params.Display)
 		end;
 	};
+	LoadActor('../../default/BGAnimations/ScreenGameplay overlay');
 }
