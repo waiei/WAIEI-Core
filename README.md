@@ -5,7 +5,7 @@ WAIEI CoreはStepMania5のテーマ開発において、簡単に便利な機能
 
 まだ製作途中なのでどんどん仕様が変わると思います
 
-[現時点での仕様はWikiを確認してください](wiki)
+[現時点での仕様はWikiを確認してください](https://github.com/waiei/WAIEI-Core/wiki)
 
 
 # 例
