@@ -224,7 +224,8 @@ local function sortSongs(groupTable)
 		for s=1, #songs do
 			songTable[s] = {
 				folder = getSongFolderName(self, songs[s]),
-				name   = string.lower(songs[s]:GetTranslitFullTitle()),
+				-- [AAA]より[AAA -AAA-]が後ろに行くようにメインタイトルの後ろにスペースを2つ入れる
+				name   = string.lower(songs[s]:GetTranslitMainTitle()..'  '..songs[s]:GetTranslitSubTitle()),
 				index  = nil,
 			}
 			-- 1文字目が「-+*/」のいずれかの場合、ソートで後ろに行くように先頭に「ﾟ」をつける
