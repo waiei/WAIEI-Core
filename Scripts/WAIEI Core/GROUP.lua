@@ -1,8 +1,8 @@
 -- Group.ini
 
 -- デフォルト値
-local defaultMenuColors = Color('White')
-local defaultMeterTypes = 'DDR'
+local defaultMenuColor = Color('White')
+local defaultMeterType = 'DDR'
 
 --[[
 	songから楽曲のフォルダ名を取得する
@@ -112,7 +112,7 @@ local function scanGroupSongs(groupName)
 	for i=1, #songs do
 		if not menuColors[songs[i]:GetSongDir()] then
 			local colorString = getSongValue(menuColor, songs[i])
-			menuColors[songs[i]:GetSongDir()] = (colorString == '') and defaultMenuColors or color(colorString)
+			menuColors[songs[i]:GetSongDir()] = (colorString == '') and defaultMenuColor or color(colorString)
 		end
 	end
 	-- MeterType
@@ -120,7 +120,7 @@ local function scanGroupSongs(groupName)
 	for i=1, #songs do
 		if not meterTypes[songs[i]:GetSongDir()] then
 			local meterString = getSongValue(meterType, songs[i])
-			meterTypes[songs[i]:GetSongDir()] = (meterString == '') and defaultMeterTypes or meterString
+			meterTypes[songs[i]:GetSongDir()] = (meterString == '') and defaultMeterType or meterString
 		end
 	end
 	-- オリジナルグループ名
@@ -138,12 +138,20 @@ end
 	すべての楽曲をスキャン
 --]]
 local isScanned = false;
-local function scanAllSongs(self)
+local function scanAllSongs(...)
+	local self, clear = ...
+	if clear then
+		isScanned = false
+		menuColors = {}
+		meterTypes = {}
+		originalNames = {}
+		groupNames = {}
+	end
 	local groups = SONGMAN:GetSongGroupNames()
 	for i=1, #groups do
 		scanGroupSongs(groups[i])
 	end;
-    isScanned = true;
+    isScanned = true
 end
 
 --[[
@@ -167,12 +175,12 @@ end
 --]]
 local function getSongMenuColor(self, song)
 	if not song then
-		return defaultMenuColors
+		return defaultMenuColor
 	end
     if not isScanned then
         scanAllSongs(self)
     end
-	return menuColors[song:GetSongDir()] or defaultMenuColors
+	return menuColors[song:GetSongDir()] or defaultMenuColor
 end
 
 --[[
@@ -183,12 +191,12 @@ end
 --]]
 local function getSongMeterType(self, song)
 	if not song then
-		return defaultMeterTypes
+		return defaultMeterType
 	end
     if not isScanned then
         scanAllSongs(self)
     end
-	return meterTypes[song:GetSongDir()] or defaultMeterTypes
+	return meterTypes[song:GetSongDir()] or defaultMeterType
 end
 
 --[[
@@ -350,14 +358,23 @@ local function createSortText(self, filename)
 	sortFile:destroy()
 end
 
+--[[
+	デフォルト値の設定
+--]]
+local function setDefaultValues(self, values)
+	defaultMenuColor = values.MenuColor or defaultMenuColor
+	defaultMeterType = values.MeterType or defaultMeterType
+end
+
 return {
-	Open         = openGroupFile,
-	Value        = getValue,
-	FolderName   = getSongFolderName,
-	Scan         = scanAllSongs,
-	GroupName    = getGroupName,
-	MenuColor    = getSongMenuColor,
-	MeterType    = getSongMeterType,
-	OriginalName = getSongOriginalNames,
-	SortSongs    = createSortText,
+	Open          = openGroupFile,
+	Value         = getValue,
+	FolderName    = getSongFolderName,
+	Scan          = scanAllSongs,
+	GroupName     = getGroupName,
+	MenuColor     = getSongMenuColor,
+	MeterType     = getSongMeterType,
+	OriginalName  = getSongOriginalNames,
+	SortSongs     = createSortText,
+	DefaultValues = setDefaultValues,
 }
