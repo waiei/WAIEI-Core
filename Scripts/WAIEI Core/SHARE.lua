@@ -8,6 +8,13 @@ local defaultCodes = {
 	Share = {'Share', 'Share2'},
 }
 
+local errorMessages = {}
+local defaultErrorMessages = {
+	profile = 'この機能を利用するにはPROFILEの設定が必須です。',
+	song    = '楽曲情報の取得に失敗しました。',
+	course  = 'この機能はコースモードでは使用できません。',
+}
+
 --[[
 	テーブル内に指定した値があるかチェック
 	@param	string	search	検索文字
@@ -43,18 +50,18 @@ local function validateAndGetValues(player, datetimeTable)
     local playerName = PROFILEMAN:GetPlayerName(player);
     if not playerName or playerName == '' then
 		-- Profile設定必須
-		return {Error = 'name'}
+		return {Error = errorMessages.profile}
 	end
 	
 	if GAMESTATE:IsCourseMode() then
 		-- コースモードは許可されていない
-		return {Error = 'course'}
+		return {Error = errorMessages.course}
 	end
 	
 	local song = GAMESTATE:GetCurrentSong();
 	if not song then
 		-- 楽曲が取得できない
-		return {Error = 'song'}
+		return {Error = errorMessages.song}
 	end
 	
 	local ss  = STATSMAN:GetCurStageStats()
@@ -300,7 +307,7 @@ end
 --[[
 	リザルト連携用URLを生成
 --]]
-local function generateUrl(self, player, datetimeTable)
+local function generateQuery(self, player, datetimeTable)
 	if not datetimeTable then
 		datetimeTable = {
 			year   = Year(),
@@ -311,27 +318,29 @@ local function generateUrl(self, player, datetimeTable)
 		}
 	end
 	local params = validateAndGetValues(player, datetimeTable)
-    return sendUrl..'?'..convertQueryVersion2(params)
-    --[[
-	local url2 = '!'..sendUrl..'?'
-	for key,value in pairs(params) do
-		url = url..key..'='..value..'&'
-		url2 = url2..'|'..value
+	if params.Error then
+		return {Query = nil, Error = params.Error}
 	end
-	_SYS(#url2)
-	--_LOG(url)
-	-- 最後の&を消して返却
-	return string.sub(url, 1, -1)
-    --]]
+    return {Query = convertQueryVersion2(params), Error = nil}
+end
+
+--[[
+	エラーメッセージを設定
+--]]
+local function setErrorMessage(self, messages)
+	errorMessages['profile'] = messages.profile or errorMessages['profile']
+	errorMessages['song']    = messages.song or errorMessages['song']
+	errorMessages['course']  = messages.course or errorMessages['course']
 end
 
 --[[
 	リザルト連携用URLへアクセス
 --]]
 local function shareResult(...)
-	local self, url = ...
-	--local url = generateUrl(self, player, datetimeTable)
-	GAMESTATE:ApplyGameCommand("urlnoexit,"..url)
+	local self, query = ...
+	if query then
+		GAMESTATE:ApplyGameCommand("urlnoexit,"..sendUrl..'?'..query)
+	end
 end
 
 --[[
@@ -340,7 +349,7 @@ end
 	@param	table	codes		Metricsで定義したCode（{Share={string}, Share2={string}}）
 --]]
 local shareDatetime = {}
-local shareUrl = {nil, nil}
+local shareQuery = {nil, nil}
 local function shareActor(...)
 	local self, enabledShare, codes = ...
     -- nil の時は有効
@@ -359,26 +368,35 @@ local function shareActor(...)
 				hour   = Hour(),
 				minute = Minute(),
 			}
-            shareUrl = {nil, nil}
+            shareQuery = {nil, nil}
             for player in ivalues(PlayerNumber) do
+				local pn = (player == PLAYER_1) and 1 or 2
                 if GAMESTATE:IsPlayerEnabled(player) then
-                    shareUrl[(player == PLAYER_1) and 1 or 2] = generateUrl(self, player, shareDatetime)
+                    shareQuery[pn] = generateQuery(self, player, shareDatetime)
                 end
             end
 		end;
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
+			local pn = (player == PLAYER_1) and 1 or 2
 			local codeShare = inTable(params.Name, codes['Share'])
-            local url = shareUrl[(player == PLAYER_1) and 1 or 2]
-			if codeShare and url then
-				shareResult(self, shareUrl[(player == PLAYER_1) and 1 or 2])
+			if codeShare and shareQuery[pn] then
+				if shareQuery[pn]['Query'] then
+					shareResult(self, shareQuery[pn]['Query'])
+				else
+					_SYS(shareQuery[pn]['Error'])
+				end
 			end
 		end;
 	}
 end
 
+-- デフォルトのエラーメッセージを設定
+setErrorMessage(self, defaultErrorMessages)
+
 return {
-	Send  = shareResult,
-	Url   = generateUrl,
-	Actor = shareActor,
+	Messages = setErrorMessage,
+	Send     = shareResult,
+	Query    = generateQuery,
+	Actor    = shareActor,
 }
