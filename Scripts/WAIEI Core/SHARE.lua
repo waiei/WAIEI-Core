@@ -307,7 +307,7 @@ end
 --[[
 	リザルト連携用URLを生成
 --]]
-local function generateQuery(self, player, datetimeTable)
+local function generateUrl(self, player, datetimeTable)
 	if not datetimeTable then
 		datetimeTable = {
 			year   = Year(),
@@ -319,9 +319,9 @@ local function generateQuery(self, player, datetimeTable)
 	end
 	local params = validateAndGetValues(player, datetimeTable)
 	if params.Error then
-		return {Query = nil, Error = params.Error}
+		return {Url = sendUrl, Query = nil, Error = params.Error}
 	end
-    return {Query = convertQueryVersion2(params), Error = nil}
+    return {Url = sendUrl, Query = convertQueryVersion2(params), Error = nil}
 end
 
 --[[
@@ -397,6 +397,6 @@ setErrorMessage(self, defaultErrorMessages)
 return {
 	Messages = setErrorMessage,
 	Send     = shareResult,
-	Query    = generateQuery,
+	Url      = generateUrl,
 	Actor    = shareActor,
 }
