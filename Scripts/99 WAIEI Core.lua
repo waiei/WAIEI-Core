@@ -8,10 +8,22 @@ function _SYS2(value)
 	SCREENMAN:SystemMessage(Serialize(value))
 end
 
-function _LOG(text)
-	file = RageFileUtil:CreateRageFile()
-	file:Open('WAIEI Core.log', 2)
-	file:Write(text)
+-- DebugLogsにログを出力
+function _LOG(...)
+    local text, overwrite = ...
+    overwrite = overwrite or false
+    local name = THEME:GetCurrentThemeDirectory()..'./DebugLogs/'..Year()..'-'..string.format('%02d', MonthOfYear()+1)..'-'..string.format('%02d', DayOfMonth())..'.log'
+    local data = ''
+    if not overwrite and FILEMAN:DoesFileExist(name) then
+        local file = RageFileUtil:CreateRageFile()
+        file:Open(name, 1)
+        data = file:Read()
+        file:Close()
+        file:destroy()
+    end
+	local file = RageFileUtil:CreateRageFile()
+	file:Open(name, 2)
+	file:Write(data .. text .. '\n')
 	file:Close()
 	file:destroy()
 end
@@ -42,6 +54,9 @@ YA_SCROLL = dofile(coreDir..'SCROLL.lua')
 
 -- リザルト連携
 YA_SHARE  = dofile(coreDir..'SHARE.lua')
+
+-- QRコード関連
+YA_QRCODE  = dofile(coreDir..'QRCODE.lua')
 
 
 --[[
