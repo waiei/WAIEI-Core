@@ -7,7 +7,7 @@ local function QrCodeActor(...)
 	local self, id, size, border, line = ...
 	line   = line or 50
 	border = border or 0
-	size = (size and size > border*2 + line) and size or math.min(100, border*2 + line)
+	size = (size and size > border*2 + line) and size or math.min(50, border*2 + line)
 	local qr = YA_LIB.QR
 	local qrcode = Def.ActorFrame{
 			SetQrMessageCommand = function(self, params)
