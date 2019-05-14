@@ -1,6 +1,6 @@
 -- バージョン
-local ver = 19
-local date = '20190510'
+local ver = 20
+local date = '20190515'
 local function coreVer()
 	return ver
 end
