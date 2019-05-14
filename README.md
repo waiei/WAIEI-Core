@@ -57,8 +57,9 @@ YA_GROUP:Scan()
 - Graphics/MusicWheelItem Song NormalPart等
 
 ```
--- colorにはdiffuseで使用可能なColor型が返却される
-local color = YA_GROUP:MenuColor(GAMESTATE:GetCurrentSong())
+-- menuColorにはdiffuseで使用可能なColor型が返却される
+local menuColor = YA_GROUP:MenuColor(GAMESTATE:GetCurrentSong())
+self:diffuse(menuColor)
 ```
 
 ## ユーザーカスタムソートの設定
@@ -122,3 +123,5 @@ MITだけど、ちゃんと1.0としてリリースするまで待ってくれ�
 - [ ] DRILL
 - [x] SHARE
     - [x] TwitterResult
+- [x] QRCODE
+    - [x] ShowQRCode

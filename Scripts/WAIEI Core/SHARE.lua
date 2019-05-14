@@ -349,7 +349,7 @@ end
 	@param	table	codes		Metricsで定義したCode（{Share={string}, Share2={string}}）
 --]]
 local shareDatetime = {}
-local shareQuery = {nil, nil}
+local shareUrl = {nil, nil}
 local function shareActor(...)
 	local self, enabledShare, codes = ...
     -- nil の時は有効
@@ -368,11 +368,11 @@ local function shareActor(...)
 				hour   = Hour(),
 				minute = Minute(),
 			}
-            shareQuery = {nil, nil}
+            shareUrl = {nil, nil}
             for player in ivalues(PlayerNumber) do
 				local pn = (player == PLAYER_1) and 1 or 2
                 if GAMESTATE:IsPlayerEnabled(player) then
-                    shareQuery[pn] = generateQuery(self, player, shareDatetime)
+                    shareUrl[pn] = generateUrl(self, player, shareDatetime)
                 end
             end
 		end;
@@ -380,11 +380,11 @@ local function shareActor(...)
 			local player = params.PlayerNumber
 			local pn = (player == PLAYER_1) and 1 or 2
 			local codeShare = inTable(params.Name, codes['Share'])
-			if codeShare and shareQuery[pn] then
-				if shareQuery[pn]['Query'] then
-					shareResult(self, shareQuery[pn]['Query'])
+			if codeShare and shareUrl[pn] then
+				if shareUrl[pn]['Query'] then
+					shareResult(self, shareUrl[pn]['Query'])
 				else
-					_SYS(shareQuery[pn]['Error'])
+					_SYS(shareUrl[pn]['Error'])
 				end
 			end
 		end;
