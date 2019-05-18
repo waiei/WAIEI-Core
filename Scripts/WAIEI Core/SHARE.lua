@@ -8,11 +8,58 @@ local defaultCodes = {
 	Share = {'Share', 'Share2'},
 }
 
+-- エラーメッセージ
 local errorMessages = {}
 local defaultErrorMessages = {
-	profile = 'この機能を利用するにはPROFILEの設定が必須です。',
-	song    = '楽曲情報の取得に失敗しました。',
-	course  = 'この機能はコースモードでは使用できません。',
+	Profile = 'この機能を利用するにはPROFILEの設定が必須です。',
+	Song    = '楽曲情報の取得に失敗しました。',
+	Course  = 'この機能はコースモードでは使用できません。',
+}
+
+-- 値取得用関数
+local functions = {}
+local defaultFunctions = {
+	-- グルーヴレーダーの値を設定（Player player, string radarCategory） :int
+	RadarValue = function(player, radarCategory)
+		local steps = GAMESTATE:GetCurrentSteps(player)
+		if not steps then
+			return 0
+		end
+		local radar = steps:GetRadarValues(player)
+		if not radar then
+			return 0
+		end
+		if YA_VER:Version() >= 70 then
+			return math.floor(math.min(radar:GetValue(radarCategory) * 0.95, 1.1) * 100)
+		else
+			return math.floor(radar:GetValue(radarCategory) * 100)
+		end
+	end,
+	-- 判定ラベル（引数なし）:string
+	Judgement = function()
+		return 'StepMania'	-- 'StepMania', 'DDR', 'DDR SuperNOVA' のいずれかに対応
+	end,
+	-- 難易度数値（Steps steps）:int
+	Meter = function(steps)
+		return steps:GetMeter()
+	end,
+	-- ハイスコア判定（Player player）:bool
+	HighScore = function(player)
+		local pss = STATSMAN:GetCurStageStats():GetPlayerStageStats(player)
+		return (pss and pss:GetPersonalHighScoreIndex() == 0)
+	end,
+	-- スコアタイプ（）:string
+	ScoreType = function()
+		return YA_SCORE:GetType() or 'Default'	-- 'Default', 'A', 'SN2', 'Classic', 'Hybrid' のいずれかに対応
+	end,
+	-- テーマカラー（引数なし）:string
+	ThemeColor = function()
+		return ''
+	end,
+	-- アルティメットライフ（引数なし）:bool
+	Ultimate = function()
+		return false
+	end,
 }
 
 --[[
@@ -50,18 +97,18 @@ local function validateAndGetValues(player, datetimeTable)
     local playerName = PROFILEMAN:GetPlayerName(player);
     if not playerName or playerName == '' then
 		-- Profile設定必須
-		return {Error = errorMessages.profile}
+		return {Error = errorMessages.Profile}
 	end
 	
 	if GAMESTATE:IsCourseMode() then
 		-- コースモードは許可されていない
-		return {Error = errorMessages.course}
+		return {Error = errorMessages.Course}
 	end
 	
 	local song = GAMESTATE:GetCurrentSong();
 	if not song then
 		-- 楽曲が取得できない
-		return {Error = errorMessages.song}
+		return {Error = errorMessages.Song}
 	end
 	
 	local ss  = STATSMAN:GetCurStageStats()
@@ -110,14 +157,13 @@ local function validateAndGetValues(player, datetimeTable)
 	local theme = THEME:GetCurThemeName()
 	
 	-- テーマによっては取得用の関数が必要
-	local checkJudgeLabel = 'StepMania'
-	local highScore  = (pss:GetPersonalHighScoreIndex() == 0) and '1' or '0'
-	local meter      = st:GetMeter()
-	local checkRadar = st:GetRadarValues(player)
-	local scoreMode  = 'Default'
-	local ultimate   = 0
+	local checkJudgeLabel = functions.Judgement()
+	local highScore  = (functions.HighScore(player)) and '1' or '0'
+	local meter      = functions.Meter(st)
+	local scoreMode  = functions.ScoreType()
+	local ultimate   = (functions.Ultimate()) and '1' or '0'
 	-- テーマカラー
-	local sub   = ''
+	local sub   = functions.ThemeColor()
 	
 	-- 判定ラベル
 	local judgeLabel = 0
@@ -176,24 +222,13 @@ local function validateAndGetValues(player, datetimeTable)
 	end
 	
 	-- レーダー
-	local radar = {}
-	if YA_VER:Version() >= 70 then
-		radar = {
-			Stream  = math.floor(math.min(checkRadar:GetValue('RadarCategory_Stream') * 0.95, 1.1) * 100),
-			Voltage = math.floor(math.min(checkRadar:GetValue('RadarCategory_Voltage') * 0.95, 1.1) * 100),
-			Air     = math.floor(math.min(checkRadar:GetValue('RadarCategory_Air') * 0.95, 1.1) * 100),
-			Freeze  = math.floor(math.min(checkRadar:GetValue('RadarCategory_Freeze') * 0.95, 1.1) * 100),
-			Chaos   = math.floor(math.min(checkRadar:GetValue('RadarCategory_Chaos') * 0.95, 1.1) * 100),
-		}
-	else
-		radar = {
-			Stream  = math.floor(checkRadar:GetValue('RadarCategory_Stream') * 100),
-			Voltage = math.floor(checkRadar:GetValue('RadarCategory_Voltage') * 100),
-			Air     = math.floor(checkRadar:GetValue('RadarCategory_Air') * 100),
-			Freeze  = math.floor(checkRadar:GetValue('RadarCategory_Freeze') * 100),
-			Chaos   = math.floor(checkRadar:GetValue('RadarCategory_Chaos') * 100),
-		}
-	end
+	local radar = {
+		Stream  = functions.RadarValue(player, 'RadarCategory_Stream'),
+		Voltage = functions.RadarValue(player, 'RadarCategory_Voltage'),
+		Air     = functions.RadarValue(player, 'RadarCategory_Air'),
+		Freeze  = functions.RadarValue(player, 'RadarCategory_Freeze'),
+		Chaos   = functions.RadarValue(player, 'RadarCategory_Chaos'),
+	}
 	
 	local noteScore = {
 		W1   = pss:GetTapNoteScores('TapNoteScore_W1'),
@@ -328,9 +363,24 @@ end
 	エラーメッセージを設定
 --]]
 local function setErrorMessage(self, messages)
-	errorMessages['profile'] = messages.profile or errorMessages['profile']
-	errorMessages['song']    = messages.song or errorMessages['song']
-	errorMessages['course']  = messages.course or errorMessages['course']
+	errorMessages['Profile'] = messages.Profile or errorMessages.Profile
+	errorMessages['Song']    = messages.Song or errorMessages.Song
+	errorMessages['Course']  = messages.Course or errorMessages.Course
+	return errorMessages
+end
+
+--[[
+	値取得用の関数を設定
+--]]
+local function setFunctions(self, newFunctions)
+	functions['RadarValue'] = newFunctions.RadarValue or functions.RadarValue
+	functions['Judgement'] = newFunctions.Judgement or functions.Judgement
+	functions['HighScore'] = newFunctions.HighScore or functions.HighScore
+	functions['Meter'] = newFunctions.Meter or functions.Meter
+	functions['ScoreType'] = newFunctions.ScoreType or functions.ScoreType
+	functions['ThemeColor'] = newFunctions.ThemeColor or functions.ThemeColor
+	functions['Ultimate'] = newFunctions.Ultimate or functions.Ultimate
+	return functions
 end
 
 --[[
@@ -352,13 +402,19 @@ local shareDatetime = {}
 local shareUrl = {nil, nil}
 local function shareActor(...)
 	local self, enabledShare, codes = ...
-    -- nil の時は有効
+    -- falseの時のみ無効（nil の時は有効）
     if enabledShare == false then
         return Def.Actor()
     end
 	if not codes then
 		codes = defaultCodes
 	end
+	--[[
+		このActorをコピーしてEvaluationに貼り付けることで自分好みにカスタムできます
+		以下二つの変数の初期化も必要です
+		local shareDatetime = {}
+		local shareUrl = {nil, nil}
+	--]]
 	return Def.Actor{
 		InitCommand = function(self)
 			shareDatetime = {
@@ -372,6 +428,7 @@ local function shareActor(...)
             for player in ivalues(PlayerNumber) do
 				local pn = (player == PLAYER_1) and 1 or 2
                 if GAMESTATE:IsPlayerEnabled(player) then
+					-- カスタムする場合は YA_SHARE:Url(player, shareDatetime)
                     shareUrl[pn] = generateUrl(self, player, shareDatetime)
                 end
             end
@@ -379,24 +436,33 @@ local function shareActor(...)
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
 			local pn = (player == PLAYER_1) and 1 or 2
+			-- カスタムする場合は (params.Name == 'Share' or params.Name == 'Share2')
 			local codeShare = inTable(params.Name, codes['Share'])
+			-- params.NameがCodeで定義したもので、shareUrl[pn]が取得済み
 			if codeShare and shareUrl[pn] then
 				if shareUrl[pn]['Query'] then
+					-- ブラウザを開く
+					-- カスタムする場合は YA_SHARE:Send(shareUrl[pn]['Query'])
 					shareResult(self, shareUrl[pn]['Query'])
 				else
+					-- エラーがあるので表示する
 					_SYS(shareUrl[pn]['Error'])
 				end
 			end
 		end;
 	}
+	-- コピーここまで
 end
 
 -- デフォルトのエラーメッセージを設定
 setErrorMessage(self, defaultErrorMessages)
+-- デフォルトの値設定用関数を設定
+setFunctions(self, defaultFunctions)
 
 return {
-	Messages = setErrorMessage,
-	Send     = shareResult,
-	Url      = generateUrl,
-	Actor    = shareActor,
+	Messages  = setErrorMessage,
+	Functions = setFunctions,
+	Send      = shareResult,
+	Url       = generateUrl,
+	Actor     = shareActor,
 }
