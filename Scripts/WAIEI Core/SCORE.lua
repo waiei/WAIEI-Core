@@ -4,7 +4,8 @@
 -- 例：local function getSN2Score()
 local scoreTypeList = {'A', 'SN2', 'Classic', 'Hybrid'}
 
--- デフォルト値
+-- スコアタイプ（初期値未設定、Actorを使用した時点で値が入る）
+local scoreType
 local defaultScoreType = 'A'
 
 --[[
@@ -117,8 +118,8 @@ end
 	@return	Actor
 --]]
 local function scoreActor(...)
-	local self, scoreType = ...
-	scoreType = string.lower(scoreType or defaultScoreType)
+	local self, newScoreType = ...
+	scoreType = string.lower(newScoreType or defaultScoreType)
 	-- 現在のステップ数
 	local stepCount = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
 	-- ステップ数
@@ -181,6 +182,13 @@ local function scoreActor(...)
 end
 
 --[[
+	スコアタイプを取得
+--]]
+local function getScoreType(self)
+	return scoreType
+end
+
+--[[
 	Metrics.iniのUseInternalScoringの値を取得
 	現在はコースモードがtrue、通常時はfalse
 --]]
@@ -191,4 +199,5 @@ end
 return {
 	Actor           = scoreActor,
 	InternalScoring = getUseInternalScoring,
+	GetType         = getScoreType,
 }
