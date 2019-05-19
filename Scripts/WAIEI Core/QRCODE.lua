@@ -1,5 +1,8 @@
 -- QRCODE
 
+--[[
+	内容の書き換えが可能なQRコードを作成
+--]]
 local allQrData = {}
 local qrColors = {}
 local defaultQrColors = {Color('White'), Color('Black')}
@@ -20,8 +23,6 @@ local function QrCodeActor(...)
 				local clear = false
 				if not isSuccess or params.Text == '' then
 					clear = true
-					if not isSuccess then
-					end
 				end
 				-- メモリ上に保存
 				allQrData[id] = qrData
@@ -94,6 +95,45 @@ local function QrCodeActor(...)
 end
 
 --[[
+	内容の書き換えが不可能なQRコードを作成
+--]]
+local function StaticQrCodeActor(...)
+	local self, text, size, border = ...
+	local qrcode = Def.ActorFrame{}
+	-- テキストチェック
+	if not text or text == '' then
+		return qrcode
+	end
+	border = border or 0
+	size = (size and size > border*2) and size or math.min(50, border*2)
+	local qr = YA_LIB.QR
+	-- QRコードの取得
+	local isSuccess, qrData = qr.qrcode(text)
+	if not isSuccess then
+		return qrcode
+	end
+	local line = #qrData
+	local cellSize = 1.0 * (size-border*2) / ((border>0) and line or line+8)
+	-- 土台の色
+	qrcode[#qrcode+1] = Def.Quad{
+		InitCommand = cmd(zoomto, size, size; diffuse, qrColors[1]);
+	};
+	for i=0, line*line-1 do
+		if qrData[math.floor(i/line)+1][i%line+1] >= 0 then
+			qrcode[#qrcode+1] = Def.Quad{
+				InitCommand = function(self)
+					self:diffuse(qrColors[2])
+					self:x(-size/2 + (i % line) * cellSize + cellSize/2 + ((border>0) and border or cellSize*4))
+					self:y(-size/2 + math.floor(i / line) * cellSize + cellSize/2 + ((border>0) and border or cellSize*4))
+					self:zoomto(cellSize, cellSize)
+				end;
+			};
+		end
+	end
+	return qrcode
+end
+
+--[[
 	次に作成するQRコードの色を設定する
 	color baseColor 下地（デフォルト白）
 	color codeColor コード部分（デフォルト黒）
@@ -108,6 +148,7 @@ setNextQrCodeColors(self)
 
 
 return {
-	Actor = QrCodeActor,
-	Color = setNextQrCodeColors,
+	Actor  = QrCodeActor,
+	Static = StaticQrCodeActor,
+	Color  = setNextQrCodeColors,
 }
