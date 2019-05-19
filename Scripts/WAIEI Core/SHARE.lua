@@ -294,44 +294,44 @@ end
     QRコード対応版のURLクエリに変更する
 --]]
 local function convertQueryVersion2(data)
-    local b64 = YA_LIB.BASE64
-    local values = {
-        -- フォルダ
-        f = data.fn,
-        -- グループ
-        g = data.gn,
-        -- パッケージ
-        p = data.package,
-        -- タイトル
-        t = data.title,
-        -- アーティスト
-        a = data.artist,
-        -- プレイヤー名
-        pl = data.player,
-        -- テーマ(テーマ名、カラー名 ':'区切り)
-        tm = table.concat({data.theme, data.sub}, ":"),
-        -- PlayerOption
-        po = data.option,
-        -- DateTime(YYYY/mm/dd HH:ii)
-        dt = string.format("%04d/%02d/%02d %02d:%02d", data.tm_y, data.tm_m, data.tm_d, data.tm_h, data.tm_mi),
-        -- GUID
-        id = data.guid,
-        -- レーダー(STREAM, VOLTAGE, AIR, FREEZE, CHAOS ':'区切り)
-        rd = table.concat({data.r_str, data.r_vol, data.r_air, data.r_frz, data.r_cha}, ":"),
-        -- 判定(W1, W2, W3, W4, W5, Miss, OK, MaxCombo ':'区切り)
-        jd = table.concat({data.j_w1, data.j_w2, data.j_w3, data.j_w4, data.j_w5, data.j_ms, data.j_ok, data.j_mc}, ":"),
-        -- 設定(TimingDifficulty, LifeDifficulty, Ultimate, JudgementLabel ':'区切り)
-        cf = table.concat({data.timing, data.life, data.ultimate, data.judge}, ":"),
-        -- ゲームモード・曲情報(GameStyle, GameMode, MeterType, Difficulty, Level ':'区切り)
-        gm = table.concat({data.style, data.mode, data.mt, data.difficulty, data.level}, ":"),
-        -- スコア(ScoreMode, Score, DancePoint, HighScore, Grade ':'区切り)
-        sc = table.concat({data.scoremode, data.score, data.dp, data.hscore, data.grade, data.fc}, ":"),
-        -- 色
-        cl = data.color,
-        -- ハッシュ(未実装)
-        hs = '',
-    }
-    local query = ''
+	local b64 = YA_LIB.BASE64
+	local values = {
+		-- フォルダ
+		f = data.fn,
+		-- グループ
+		g = data.gn,
+		-- パッケージ
+		p = data.package,
+		-- タイトル
+		t = data.title,
+		-- アーティスト
+		a = data.artist,
+		-- プレイヤー名
+		pl = data.player,
+		-- テーマ(テーマ名、カラー名 ':'区切り)
+		tm = table.concat({data.theme, data.sub}, ":"),
+		-- PlayerOption
+		po = data.option,
+		-- DateTime(YYYY/mm/dd HH:ii)
+		dt = string.format("%04d/%02d/%02d %02d:%02d", data.tm_y, data.tm_m, data.tm_d, data.tm_h, data.tm_mi),
+		-- GUID
+		id = data.guid,
+		-- レーダー(STREAM, VOLTAGE, AIR, FREEZE, CHAOS ':'区切り)
+		rd = table.concat({data.r_str, data.r_vol, data.r_air, data.r_frz, data.r_cha}, ":"),
+		-- 判定(W1, W2, W3, W4, W5, Miss, OK, MaxCombo ':'区切り)
+		jd = table.concat({data.j_w1, data.j_w2, data.j_w3, data.j_w4, data.j_w5, data.j_ms, data.j_ok, data.j_mc}, ":"),
+		-- 設定(TimingDifficulty, LifeDifficulty, Ultimate, JudgementLabel ':'区切り)
+		cf = table.concat({data.timing, data.life, data.ultimate, data.judge}, ":"),
+		-- ゲームモード・曲情報(GameStyle, GameMode, MeterType, Difficulty, Level ':'区切り)
+		gm = table.concat({data.style, data.mode, data.mt, data.difficulty, data.level}, ":"),
+		-- スコア(ScoreMode, Score, DancePoint, HighScore, Grade ':'区切り)
+		sc = table.concat({data.scoremode, data.score, data.dp, data.hscore, data.grade, data.fc}, ":"),
+		-- 色
+		cl = data.color,
+		-- ハッシュ(未実装)
+		hs = '',
+	}
+	local query = ''
 	for key,value in pairs(values) do
 		query = query..key..'='..b64:ToBase64(value)..'&'
 	end
@@ -398,40 +398,38 @@ end
 	@param	bool	enabledShare	リザルト共有機能の有効フラグ（未指定の場合も有効）
 	@param	table	codes		Metricsで定義したCode（{Share={string}, Share2={string}}）
 --]]
-local shareDatetime = {}
-local shareUrl = {nil, nil}
+local shareUrl = {}
 local function shareActor(...)
 	local self, enabledShare, codes = ...
-    -- falseの時のみ無効（nil の時は有効）
-    if enabledShare == false then
-        return Def.Actor()
-    end
+	-- falseの時のみ無効（nil の時は有効）
+	if enabledShare == false then
+		return Def.Actor()
+	end
 	if not codes then
 		codes = defaultCodes
 	end
 	--[[
 		このActorをコピーしてEvaluationに貼り付けることで自分好みにカスタムできます
 		以下二つの変数の初期化も必要です
-		local shareDatetime = {}
-		local shareUrl = {nil, nil}
+		local shareUrl = {}
 	--]]
 	return Def.Actor{
 		InitCommand = function(self)
-			shareDatetime = {
+			local shareDatetime = {
 				year   = Year(),
 				month  = (MonthOfYear()+1),
 				day    = DayOfMonth(),
 				hour   = Hour(),
 				minute = Minute(),
 			}
-            shareUrl = {nil, nil}
-            for player in ivalues(PlayerNumber) do
+			shareUrl = {nil, nil}
+			for player in ivalues(PlayerNumber) do
 				local pn = (player == PLAYER_1) and 1 or 2
-                if GAMESTATE:IsPlayerEnabled(player) then
+				if GAMESTATE:IsPlayerEnabled(player) then
 					-- カスタムする場合は YA_SHARE:Url(player, shareDatetime)
-                    shareUrl[pn] = generateUrl(self, player, shareDatetime)
-                end
-            end
+					shareUrl[pn] = generateUrl(self, player, shareDatetime)
+				end
+			end
 		end;
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
