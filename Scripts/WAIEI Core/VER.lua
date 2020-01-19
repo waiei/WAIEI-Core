@@ -1,6 +1,6 @@
 -- バージョン
-local ver = 22
-local date = '20190519'
+local ver = 23
+local date = '20200120'
 local function coreVer()
 	return ver
 end
@@ -12,7 +12,10 @@ end
 local __SMV__ = nil
 local function SetSMVersion()
 	local v=string.lower(ProductVersion())
-	if string.find(v,"5.2",0,true) then
+	if string.find(v,"5.3",0,true) then
+	-- 5.3.x
+		__SMV__= 5300
+	elseif string.find(v,"5.2",0,true) then
 	-- 5.2.x
 		__SMV__= 5200
 	elseif string.find(v,"5.1.-",0,true) then

@@ -165,31 +165,31 @@ local function setSpeed(player, mod, speed)
 	local poc = ps:GetPlayerOptions("ModsLevel_Current")
 	if mod == 'x' then
 		-- xMod
-		pop:XMod(speed)
+		--pop:XMod(speed)
 		post:XMod(speed)
 		posn:XMod(speed)
-		poc:XMod(speed)
+		--poc:XMod(speed)
 		return {mod = 'x', speed = speed}
 	elseif mod == 'c' then
 		-- CMod
-		pop:CMod(speed)
+		--pop:CMod(speed)
 		post:CMod(speed)
 		posn:CMod(speed)
-		poc:CMod(speed)
+		--poc:CMod(speed)
 		return {mod = 'c', speed = speed}
 	elseif mod == 'm' then
 		-- mMod
-		pop:MMod(speed)
+		--pop:MMod(speed)
 		post:MMod(speed)
 		posn:MMod(speed)
-		poc:MMod(speed)
+		--poc:MMod(speed)
 		return {mod = 'm', speed = speed}
 	end
 	-- 1.0x
-	pop:XMod(1.0)
+	--pop:XMod(1.0)
 	post:XMod(1.0)
 	posn:XMod(1.0)
-	poc:XMod(1.0)
+	--poc:XMod(1.0)
 	return {mod = 'x', speed = 1}
 end
 
@@ -288,16 +288,16 @@ local actorReverseParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
 local function scrollActor(...)
 	local self,enabledSpeed,enabledReverse,codes = ...
     if enabledSpeed == false and enabledReverse == false then
-        return	Def.Actor{}
+        return	Def.Actor({})
     end
 	if not codes then
 		codes = defaultCodes
 	end
-	return	Def.Actor{
+	return	Def.Actor({
 		InitCommand=function(self)
 			YA_SCROLL:Load(PLAYER_1)
 			YA_SCROLL:Load(PLAYER_2)
-		end;
+		end,
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
 			local codeSpeedUp   = inTable(params.Name, codes['SpeedUp'])
@@ -330,7 +330,7 @@ local function scrollActor(...)
 					Display = getDisplayReverse(actorReverseParams[player]['new']),
 				})
 			end
-		end;
+		end,
 		ChangeSpeedP1Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_1
@@ -343,7 +343,7 @@ local function scrollActor(...)
 			else
 				setSpeed(player, params['mod'], params['new'])
 			end
-		end;
+		end,
 		ChangeSpeedP2Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_2
@@ -356,7 +356,7 @@ local function scrollActor(...)
 			else
 				setSpeed(player, params['mod'], params['new'])
 			end
-		end;
+		end,
 		ChangeReverseP1Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_1
@@ -369,7 +369,7 @@ local function scrollActor(...)
 			else
 				setReverse(player, params['new'])
 			end
-		end;
+		end,
 		ChangeReverseP2Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_2
@@ -382,8 +382,8 @@ local function scrollActor(...)
 			else
 				setReverse(player, params['new'])
 			end
-		end;
-	};
+		end,
+	})
 end
 
 return {

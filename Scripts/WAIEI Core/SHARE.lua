@@ -50,7 +50,7 @@ local defaultFunctions = {
 	end,
 	-- スコアタイプ（）:string
 	ScoreType = function()
-		return YA_SCORE:GetType() or 'Default'	-- 'Default', 'A', 'SN2', 'Classic', 'Hybrid' のいずれかに対応
+		return YA_SCORE:GetDisplayType() or 'Default'	-- 'Default', 'A', 'SN2', 'Classic', 'Hybrid' のいずれかに対応
 	end,
 	-- テーマカラー（引数なし）:string
 	ThemeColor = function()
@@ -403,7 +403,7 @@ local function shareActor(...)
 	local self, enabledShare, codes = ...
 	-- falseの時のみ無効（nil の時は有効）
 	if enabledShare == false then
-		return Def.Actor()
+		return Def.Actor({})
 	end
 	if not codes then
 		codes = defaultCodes
@@ -413,7 +413,7 @@ local function shareActor(...)
 		以下二つの変数の初期化も必要です
 		local shareUrl = {}
 	--]]
-	return Def.Actor{
+	return Def.Actor({
 		InitCommand = function(self)
 			local shareDatetime = {
 				year   = Year(),
@@ -430,7 +430,7 @@ local function shareActor(...)
 					shareUrl[pn] = generateUrl(self, player, shareDatetime)
 				end
 			end
-		end;
+		end,
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
 			local pn = (player == PLAYER_1) and 1 or 2
@@ -447,8 +447,8 @@ local function shareActor(...)
 					_SYS(shareUrl[pn]['Error'])
 				end
 			end
-		end;
-	}
+		end,
+	})
 	-- コピーここまで
 end
 
