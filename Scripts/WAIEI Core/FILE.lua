@@ -109,7 +109,7 @@ local function openFile(...)
 			response = response .. ':' .. split(';',params[i])[1]
 		end
 		--]]
-		-- こんな方法あったのか
+		-- テーブルを「:」で結合して文字列にする
 		local response = table.concat(params, ':', 2, #params)
 		return split(";",response)[1]
 	end

@@ -1,7 +1,7 @@
 -- Group.ini
 
 -- デフォルト値
-local defaultMenuColor = Color('White')
+local defaultMenuColor = color('1, 1, 1, 1')
 local defaultMeterType = 'DDR'
 
 --[[
