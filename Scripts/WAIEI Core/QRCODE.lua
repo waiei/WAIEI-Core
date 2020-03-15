@@ -12,45 +12,52 @@ local function QrCodeActor(...)
 	border = border or 0
 	size = (size and size > border*2 + line) and size or math.min(50, border*2 + line)
 	local qr = YA_LIB.QR
-	local qrcode = Def.ActorFrame{
-			SetQrMessageCommand = function(self, params)
-				-- IDチェック
-				if params.Id ~= id or not params.Text then
-					return
-				end
-				-- QRコードの取得
-				local isSuccess, qrData = qr.qrcode(params.Text)
-				local clear = false
-				if not isSuccess or params.Text == '' then
-					clear = true
-				end
-				-- メモリ上に保存
-				allQrData[id] = qrData
-				-- データがなければ下地のみ表示
-				if clear then
-					self:playcommand('SetQrActor', {
-						Id    = params.Id,
-						Clear = clear,
-					})
-				end
+	local qrcode = Def.ActorFrame({
+		SetQrMessageCommand = function(self, params)
+			-- IDチェック
+			if params.Id ~= id or not params.Text then
+				return
+			end
+			-- QRコードの取得
+			local isSuccess, qrData = qr.qrcode(params.Text)
+			local clear = false
+			if not isSuccess or params.Text == '' then
+				clear = true
+			end
+			-- メモリ上に保存
+			allQrData[id] = qrData
+			-- データがなければ下地のみ表示
+			if clear then
 				self:playcommand('SetQrActor', {
-					Id     = params.Id,
-					Clear  = clear,
-					HCount = #qrData,
-					WCount = #qrData[1],
-					Size   = 1.0 * (size-border*2) / ((border>0) and #qrData or #qrData+8),
-					Before = params.Before,
-					After  = params.After,
+					Id    = params.Id,
+					Clear = clear,
 				})
-			end;
-			-- 土台の色
-			Def.Quad{
-				InitCommand = cmd(zoomto, size, size; diffuse, qrColors[1]);
-			};
-		}
+			end
+			self:playcommand('SetQrActor', {
+				Id     = params.Id,
+				Clear  = clear,
+				HCount = #qrData,
+				WCount = #qrData[1],
+				Size   = 1.0 * (size-border*2) / ((border>0) and #qrData or #qrData+8),
+				Before = params.Before,
+				After  = params.After,
+			})
+		end,
+		-- 土台の色
+		Def.Quad({
+			InitCommand = function(self)
+				self:zoomto(size, size)
+				self:diffuse(qrColors[1])
+			end,
+		}),
+	})
 	for i=0, line*line-1 do
-		qrcode[#qrcode+1] = Def.Quad{
-			InitCommand = cmd(zoomto, 1, 1; diffuse, qrColors[2]; visible, false);
+		qrcode[#qrcode+1] = Def.Quad({
+			InitCommand = function(self)
+				self:zoomto(1, 1)
+				self:diffuse(qrColors[2])
+				self:visible(false)
+			end,
 			SetQrActorMessageCommand = function(self, params)
 				-- IDチェック
 				if params.Id ~= id then
@@ -88,8 +95,8 @@ local function QrCodeActor(...)
 				else
 					self:zoomto(params.Size, params.Size)
 				end
-			end;
-		};
+			end,
+		})
 	end
 	return qrcode
 end
@@ -99,7 +106,7 @@ end
 --]]
 local function StaticQrCodeActor(...)
 	local self, text, size, border = ...
-	local qrcode = Def.ActorFrame{}
+	local qrcode = Def.ActorFrame({})
 	-- テキストチェック
 	if not text or text == '' then
 		return qrcode
@@ -120,14 +127,14 @@ local function StaticQrCodeActor(...)
 	};
 	for i=0, line*line-1 do
 		if qrData[math.floor(i/line)+1][i%line+1] >= 0 then
-			qrcode[#qrcode+1] = Def.Quad{
+			qrcode[#qrcode+1] = Def.Quad({
 				InitCommand = function(self)
 					self:diffuse(qrColors[2])
 					self:x(-size/2 + (i % line) * cellSize + cellSize/2 + ((border>0) and border or cellSize*4))
 					self:y(-size/2 + math.floor(i / line) * cellSize + cellSize/2 + ((border>0) and border or cellSize*4))
 					self:zoomto(cellSize, cellSize)
 				end;
-			};
+			})
 		end
 	end
 	return qrcode

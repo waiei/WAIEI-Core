@@ -236,8 +236,8 @@ local function sortSongs(groupTable)
 				name   = string.lower(songs[s]:GetTranslitMainTitle()..'  '..songs[s]:GetTranslitSubTitle()),
 				index  = nil,
 			}
-			-- 1文字目が「-+*/」のいずれかの場合、ソートで後ろに行くように先頭に「ﾟ」をつける
-			if string.find(songTable[s].name, '^[%-%+%*%/]') then
+			-- 1文字目が「-+*/_()」のいずれかの場合、ソートで後ろに行くように先頭に「ﾟ」をつける
+			if string.find(songTable[s].name, '^[%-%+%*%/_()]') then
 				songTable[s].name = 'ﾟ'..songTable[s].name
 			end
 		end
@@ -325,8 +325,8 @@ local function sortGroups()
 		if group then
 			group:Close()
 		end
-		-- 1文字目が「-+*/」のいずれかの場合、ソートで後ろに行くように先頭に「ﾟ」をつける
-		if string.find(groupTable[i].name, '^[%-%+%*%/]') then
+		-- 1文字目が「-+*/_()」のいずれかの場合、ソートで後ろに行くように先頭に「ﾟ」をつける
+		if string.find(groupTable[i].name, '^[%-%+%*%/_()]') then
 			groupTable[i].name = 'ﾟ'..groupTable[i].name
 		end
 	end;
