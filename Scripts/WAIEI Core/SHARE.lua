@@ -410,7 +410,7 @@ local function shareActor(...)
 	end
 	--[[
 		このActorをコピーしてEvaluationに貼り付けることで自分好みにカスタムできます
-		以下二つの変数の初期化も必要です
+		以下の変数の初期化も必要です
 		local shareUrl = {}
 	--]]
 	return Def.Actor({

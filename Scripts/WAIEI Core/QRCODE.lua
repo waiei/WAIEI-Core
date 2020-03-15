@@ -5,7 +5,7 @@
 --]]
 local allQrData = {}
 local qrColors = {}
-local defaultQrColors = {Color('White'), Color('Black')}
+local defaultQrColors = {color('1, 1, 1, 1'), color('0, 0, 0, 1')}
 local function QrCodeActor(...)
 	local self, id, size, border, line = ...
 	line   = line or 50
