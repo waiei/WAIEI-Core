@@ -31,6 +31,11 @@ local valueType = {
     MenuColor  = 'color',
 }
 
+local songPathList = {
+    '/Songs/',
+    '/AdditionalSongs/',
+}
+
 -- このファイルの相対パス
 local relativePath = string.gsub(string.sub(debug.getinfo(1).source, 2), '(.+/)[^/]+', '%1')
 
@@ -43,13 +48,15 @@ if FILEMAN:DoesFileExist(relativePath..groupIniFile) then
 end
 
 -- ファイルを検索してパスを返却（大文字小文字を無視）
--- p1:フォルダパス
+-- p1:グループ名
 -- p2:ファイル名
-local function SearchFile(path, fileName)
-    local dirList = FILEMAN:GetDirListing(path)
-    for d=1, #dirList do
-        if string.lower(dirList[d]) == string.lower(fileName) then
-            return path..dirList[d]
+local function SearchFile(groupName, fileName)
+    for i=1, #songPathList do
+        local dirList = FILEMAN:GetDirListing(songPathList[i]..groupName)
+        for d=1, #dirList do
+            if string.lower(dirList[d]) == string.lower(fileName) then
+                return songPathList[i]..groupName..dirList[d]
+            end
         end
     end
     return nil
@@ -78,9 +85,9 @@ local function ConvertColor(input)
     return nil
 end
 
--- グループ名と曲フォルダ名からパスを小文字で取得
-local function GetSongLowerDir(groupName, dir)
-    return string.lower('/Songs/'..groupName..'/'..dir..'/')
+-- Songからパスを小文字で取得（/...Songs/は取得しない）
+local function GetSongLowerDir(song)
+    return string.lower(string.gsub(song:GetSongDir(), '/[^/]*Songs/(.+)', '%1'))
 end
 
 -- Group.iniを読み込む
@@ -138,7 +145,7 @@ local function SetMultiParams(groupName, key, data)
     for k,v in pairs(valueList) do
         if k ~= 'Default' then  -- デフォルトは無視
             for s=1, #(data[k] or {}) do
-                groupParams[key][GetSongLowerDir(groupName, data[k][s])] = v
+                groupParams[key][string.lower(groupName..'/'..data[k][s]..'/')] = v
             end
         end
     end
@@ -222,9 +229,7 @@ local function Scan(self, ...)
         return
     end
     
-    local groupPath = '/Songs/'..groupName
-    
-    local groupLuaPath = SearchFile(groupPath..'/', 'group.lua')
+    local groupLuaPath = SearchFile(groupName..'/', 'group.lua')
 
     -- 強制再読み込みが無効で、すでに読み込み済みの場合は処理を行わない（Group.iniのみ）
     local hasData = false
@@ -239,7 +244,7 @@ local function Scan(self, ...)
     end
     
     -- 読みこんでRawに保存
-    local groupIniPath = (not groupLuaPath) and SearchFile(groupPath..'/', 'group.ini') or nil
+    local groupIniPath = (not groupLuaPath) and SearchFile(groupName..'/', 'group.ini') or nil
     SetRaw(groupName, groupLuaPath, groupIniPath)
     
     -- グループごとに情報を持つことができるパラメータを設定
@@ -297,7 +302,7 @@ end
 -- song型からORIGINALNAMEを取得
 -- p1:Song
 local function GetOriginalName(self, song)
-    return groupParams.OriginalName[string.lower(song:GetSongDir())] 
+    return groupParams.OriginalName[GetSongLowerDir(song)] 
         or groupParams.OriginalName[song:GetGroupName()]
         or song:GetGroupName()
 end
@@ -305,7 +310,7 @@ end
 -- song型からMETERTYPEを取得
 -- p1:Song
 local function GetMeterType(self, song)
-    return groupParams.MeterType[string.lower(song:GetSongDir())] 
+    return groupParams.MeterType[GetSongLowerDir(song)] 
         or groupParams.MeterType[song:GetGroupName()]
         or default.MeterType
 end
@@ -313,7 +318,7 @@ end
 -- song型からMENUCOLORを取得
 -- p1:Song
 local function GetMenuColor(self, song)
-    return groupParams.MenuColor[string.lower(song:GetSongDir())] 
+    return groupParams.MenuColor[GetSongLowerDir(song)] 
         or groupParams.MenuColor[song:GetGroupName()]
         or default.MenuColor
         or SONGMAN:GetSongColor(song)
@@ -322,7 +327,7 @@ end
 -- song型からLYRICTYPEを取得
 -- p1:Song
 local function GetLyricType(self, song)
-    return groupParams.LyricType[string.lower(song:GetSongDir())] 
+    return groupParams.LyricType[GetSongLowerDir(song)] 
         or groupParams.LyricType[song:GetGroupName()]
         or default.LyricType
 end
@@ -391,11 +396,11 @@ local function CreateSortText(self, ...)
             local dir = song:GetSongDir()
             local splitDir = split('/', dir)
             -- 楽曲フォルダ名（小文字）を取得
-            local key = string.lower(string.gsub(dir, '/Songs/.*/([^/]+)/', '%1'))
+            local key = string.lower(string.gsub(dir, '/[^/]*Songs/[^/]+/([^/]+)/', '%1'))
             if sortOrder[key] ~= 0 then    -- 0 = Hidden（※Default = nil）
                 dirCount = dirCount + 1
                 dirList[#dirList+1] = {
-                    Dir  = string.gsub(dir, '/Songs/(.+)', '%1'),
+                    Dir  = string.gsub(dir, '/[^/]*Songs/(.+)', '%1'),
                     Sort = sortOrder[key] or 0,
                     Name = string.lower(Adjust(song:GetTranslitMainTitle()..'  '..song:GetTranslitSubTitle())),
                 }
