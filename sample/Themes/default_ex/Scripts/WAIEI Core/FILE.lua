@@ -5,7 +5,8 @@
 	@param	string	path		ファイルパス
 	@return	Object
 --]]
-local function openFile(self, path)
+local function openFile(...)
+	local self, path, accessType = ...
 	local file
 
 	--[[
@@ -108,7 +109,7 @@ local function openFile(self, path)
 			response = response .. ':' .. split(';',params[i])[1]
 		end
 		--]]
-		-- こんな方法あったのか
+		-- テーブルを「:」で結合して文字列にする
 		local response = table.concat(params, ':', 2, #params)
 		return split(";",response)[1]
 	end
@@ -120,7 +121,7 @@ local function openFile(self, path)
 	
 	-- ロード
 	file = RageFileUtil:CreateRageFile()
-	file:Open(path, 1)
+	file:Open(path, accessType or 1)
 	
 	return {
 		Read      = readFile,

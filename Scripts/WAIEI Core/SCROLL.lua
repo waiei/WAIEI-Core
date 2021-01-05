@@ -165,31 +165,31 @@ local function setSpeed(player, mod, speed)
 	local poc = ps:GetPlayerOptions("ModsLevel_Current")
 	if mod == 'x' then
 		-- xMod
-		--pop:XMod(speed)
+		pop:XMod(speed)
 		post:XMod(speed)
 		posn:XMod(speed)
-		--poc:XMod(speed)
+		poc:XMod(speed)
 		return {mod = 'x', speed = speed}
 	elseif mod == 'c' then
 		-- CMod
-		--pop:CMod(speed)
+		pop:CMod(speed)
 		post:CMod(speed)
 		posn:CMod(speed)
-		--poc:CMod(speed)
+		poc:CMod(speed)
 		return {mod = 'c', speed = speed}
 	elseif mod == 'm' then
 		-- mMod
-		--pop:MMod(speed)
+		pop:MMod(speed)
 		post:MMod(speed)
 		posn:MMod(speed)
-		--poc:MMod(speed)
+		poc:MMod(speed)
 		return {mod = 'm', speed = speed}
 	end
 	-- 1.0x
-	--pop:XMod(1.0)
+	pop:XMod(1.0)
 	post:XMod(1.0)
 	posn:XMod(1.0)
-	--poc:XMod(1.0)
+	poc:XMod(1.0)
 	return {mod = 'x', speed = 1}
 end
 

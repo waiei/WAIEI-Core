@@ -33,6 +33,7 @@ local libDir  = THEME:GetCurrentThemeDirectory()..'Scripts/lib/'
 YA_LIB = {
 	QR     = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/qrencode.lua"),
 	BASE64 = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/base64.lua"),
+	GROUP  = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/group_lua.lua"),
 }
 
 local coreDir = THEME:GetCurrentThemeDirectory()..'Scripts/WAIEI Core/'

@@ -288,16 +288,16 @@ local actorReverseParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
 local function scrollActor(...)
 	local self,enabledSpeed,enabledReverse,codes = ...
     if enabledSpeed == false and enabledReverse == false then
-        return	Def.Actor{}
+        return	Def.Actor({})
     end
 	if not codes then
 		codes = defaultCodes
 	end
-	return	Def.Actor{
+	return	Def.Actor({
 		InitCommand=function(self)
 			YA_SCROLL:Load(PLAYER_1)
 			YA_SCROLL:Load(PLAYER_2)
-		end;
+		end,
 		CodeCommand=function(self, params)
 			local player = params.PlayerNumber
 			local codeSpeedUp   = inTable(params.Name, codes['SpeedUp'])
@@ -330,7 +330,7 @@ local function scrollActor(...)
 					Display = getDisplayReverse(actorReverseParams[player]['new']),
 				})
 			end
-		end;
+		end,
 		ChangeSpeedP1Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_1
@@ -343,7 +343,7 @@ local function scrollActor(...)
 			else
 				setSpeed(player, params['mod'], params['new'])
 			end
-		end;
+		end,
 		ChangeSpeedP2Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_2
@@ -356,7 +356,7 @@ local function scrollActor(...)
 			else
 				setSpeed(player, params['mod'], params['new'])
 			end
-		end;
+		end,
 		ChangeReverseP1Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_1
@@ -369,7 +369,7 @@ local function scrollActor(...)
 			else
 				setReverse(player, params['new'])
 			end
-		end;
+		end,
 		ChangeReverseP2Command = function(self)
 			self:finishtweening()
 			local player = PLAYER_2
@@ -382,8 +382,8 @@ local function scrollActor(...)
 			else
 				setReverse(player, params['new'])
 			end
-		end;
-	};
+		end,
+	})
 end
 
 return {

@@ -4,7 +4,17 @@
 -- 例：local function getSN2Score()
 local scoreTypeList = {'A', 'SN2', 'Classic', 'Hybrid'}
 
--- デフォルト値
+-- 定義と表示テキストのマッピング
+local displayScoreTypeList = {
+	a       = 'DDR A',
+	sn2     = 'SuperNOVA2',
+	classic = 'Classic',
+	hybrid  = 'Hybrid',
+	default = 'Default'
+}
+
+-- スコアタイプ（初期値未設定、Actorを使用した時点で値が入る）
+local scoreType
 local defaultScoreType = 'A'
 
 --[[
@@ -117,14 +127,14 @@ end
 	@return	Actor
 --]]
 local function scoreActor(...)
-	local self, scoreType = ...
-	scoreType = string.lower(scoreType or defaultScoreType)
+	local self, newScoreType = ...
+	scoreType = string.lower(newScoreType or defaultScoreType)
 	-- 現在のステップ数
 	local stepCount = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
 	-- ステップ数
 	local stepSize = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
-	return Def.ActorFrame{
-		Def.Actor{
+	return Def.ActorFrame({
+		Def.Actor({
 			-- 曲が変わるタイミングでステップカウントのリセットとトータルステップ数の取得
 			CurrentSongChangedMessageCommand = function(self)
 				stepCount = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
@@ -139,7 +149,7 @@ local function scoreActor(...)
 						1);
 					end
 				end
-			end;
+			end,
 			JudgmentMessageCommand = function(self, params)
 				if params.TapNoteScore and
 				   params.TapNoteScore ~= 'TapNoteScore_AvoidMine' and
@@ -152,6 +162,10 @@ local function scoreActor(...)
 					if (GAMESTATE:GetPlayerState(params.Player):GetPlayerController() ~= 'PlayerController_Autoplay') then
 						-- オートプレイではない
 						stepCount[params.Player] = stepCount[params.Player] + 1
+						if stats:GetFailed() then
+							-- すでに落ちてる場合はスコア加算をしない
+							return
+						end
 						-- もっとスマートな方法はないだろうか
 						if scoreType == 'a' then
 							stats:SetScore(getAScore(params, stats, stepSize[params.Player]))
@@ -175,9 +189,23 @@ local function scoreActor(...)
 						stats:SetScore(0);
 					end
 				end
-			end
-		};
-	};
+			end,
+		}),
+	})
+end
+
+--[[
+	スコアタイプを取得
+--]]
+local function getScoreType(self)
+	return scoreType or 'Default'
+end
+
+--[[
+	表示用スコアタイプを取得
+--]]
+local function getDisplayScoreType(self)
+	return displayScoreTypeList[string.lower(getScoreType(self))] or 'Default'
 end
 
 --[[
@@ -191,4 +219,6 @@ end
 return {
 	Actor           = scoreActor,
 	InternalScoring = getUseInternalScoring,
+	GetType         = getScoreType,
+	GetDisplayType  = getDisplayScoreType,
 }

@@ -120,27 +120,13 @@ local function validateAndGetValues(player, datetimeTable)
 	-- テーマ関係なく取得可能な値
 	local folder = YA_GROUP:FolderName(song)
 	local group = song:GetGroupName()
-	local ini = YA_GROUP:Open(group)
-	local iniColor     = ini and ini:Parameter('menucolor') or '1.0,1.0,1.0,1.0'
-	local iniMeterType = ini and ini:Parameter('metertype') or 'DDR'
-	local iniOriginal  = ini and ini:Parameter('originalname') or ''
-	local packageName  = ini and ini:Parameter('name') or group
-	if ini then
-		ini:Close()
-	end
+    local menuColor   = YA_GROUP:MenuColor(song)
+    local meterType   = YA_GROUP:MeterType(song)
+    local original    = YA_GROUP:OriginalName(song)
+    local packageName = YA_GROUP:GroupName(group)
 	if packageName == '' then
 		packageName = group
 	end
-	
-	local menuColor     = YA_GROUP:Value(iniColor, folder)
-	if menuColor == '' then
-		menuColor = '1.0,1.0,1.0,1.0'
-	end
-	local meterType = YA_GROUP:Value(iniMeterType, folder)
-	if meterType == '' then
-		meterType = 'DDR'
-	end
-	local original  = YA_GROUP:Value(iniOriginal, folder)
 	local checkGrade      = pss:GetGrade()
 	local checkMinCombo   = THEME:GetMetric('Gameplay', 'MinScoreToContinueCombo') or 'TapNoteScore_W3'
 	local checkDancePoint = pss:GetPercentDancePoints() * 100;
@@ -245,7 +231,7 @@ local function validateAndGetValues(player, datetimeTable)
 		fn          = folder,
 		gn          = (original == '') and string.lower(group) or string.lower(original),
 		package     = packageName,
-		color       = menuColor,
+		color       = table.concat(menuColor, ','),
 		mt          = string.upper(meterType),
 		style       = string.upper(style),
 		mode        = string.upper(mode),
