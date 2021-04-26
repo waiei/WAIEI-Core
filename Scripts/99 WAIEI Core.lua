@@ -1,11 +1,11 @@
--- デバッグ用
+-- デバッグ
 function _SYS(value)
-	SCREENMAN:SystemMessage(value or '<nil>')
+    SCREENMAN:SystemMessage(value or '<nil>')
 end
 
--- テーブルを展開して表示可能なバージョン
+-- テーブルを展開して表示
 function _SYS2(value)
-	SCREENMAN:SystemMessage(Serialize(value))
+    SCREENMAN:SystemMessage(Serialize(value))
 end
 
 -- DebugLogsにログを出力
@@ -21,19 +21,19 @@ function _LOG(...)
         file:Close()
         file:destroy()
     end
-	local file = RageFileUtil:CreateRageFile()
-	file:Open(name, 2)
-	file:Write(data .. text .. '\n')
-	file:Close()
-	file:destroy()
+    local file = RageFileUtil:CreateRageFile()
+    file:Open(name, 2)
+    file:Write(data .. text .. '\n')
+    file:Close()
+    file:destroy()
 end
 
 -- ライブラリ関連
 local libDir  = THEME:GetCurrentThemeDirectory()..'Scripts/lib/'
 YA_LIB = {
-	QR     = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/qrencode.lua"),
-	BASE64 = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/base64.lua"),
-	GROUP  = dofile(THEME:GetCurrentThemeDirectory().."Scripts/lib/group_lua.lua"),
+    QR     = dofile(libDir.."qrencode.lua"),
+    BASE64 = dofile(libDir.."base64.lua"),
+    GROUP  = dofile(libDir.."group_lua.lua"),
 }
 
 local coreDir = THEME:GetCurrentThemeDirectory()..'Scripts/WAIEI Core/'
@@ -63,7 +63,7 @@ YA_QRCODE  = dofile(coreDir..'QRCODE.lua')
 --[[
 MIT License
 
-Copyright (c) 2018 A.C
+Copyright (c) 2018-2021 A.C
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
