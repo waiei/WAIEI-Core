@@ -1,6 +1,6 @@
 -- バージョン
-local ver = 27
-local date = '20210426'
+local ver = 28
+local date = '20210505'
 
 --- WAIEI Coreのバージョンを取得
 --[[
