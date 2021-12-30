@@ -36,7 +36,7 @@ local defaultFunctions = {
         end
     end,
     -- 判定ラベル（引数なし）:string
-    Judgement = function()
+    Judgment = function()
         return 'StepMania'    -- 'StepMania', 'DDR', 'DDR SuperNOVA' のいずれかに対応
     end,
     -- 難易度数値（Steps steps）:int
@@ -69,6 +69,7 @@ local defaultFunctions = {
     @return bool
 --]]
 local function inTable(search, tableData)
+    --TODO: FindValue
     for value in ivalues(tableData) do
         if value == search then
             return true
@@ -82,7 +83,7 @@ end
     @param  string 対象の文字列
 	@return string
 --]]
-local function createUrl(str)
+local function CreateUrl(str)
     local strUrl = ''
     for i=1,string.len(str) do
         local strByte=string.byte(str,i)
@@ -97,7 +98,7 @@ end;
 	@param  table{year,month,day,hour,minute} プレイ日時が格納されたテーブル
 	@return table
 --]]
-local function validateAndGetValues(player, datetimeTable)
+local function ValidateAndGetValues(player, datetimeTable)
     local playerName = PROFILEMAN:GetPlayerName(player);
     if not playerName or playerName == '' then
         -- Profile設定必須
@@ -147,7 +148,7 @@ local function validateAndGetValues(player, datetimeTable)
     local theme = THEME:GetCurThemeName()
     
     -- テーマによっては取得用の関数が必要
-    local checkJudgeLabel = functions.Judgement()
+    local checkJudgeLabel = functions.Judgment()
     local highScore  = (functions.HighScore(player)) and '1' or '0'
     local meter      = functions.Meter(st)
     local scoreMode  = functions.ScoreType()
@@ -159,7 +160,7 @@ local function validateAndGetValues(player, datetimeTable)
     local judgeLabel = 0
     if checkJudgeLabel == 'DDR' then
         judgeLabel = 1
-    elseif checkJudgeLabel == 'DDR SuperNOVA' then
+    elseif checkJudgeLabel == 'DDR SuperNOVA' or checkJudgeLabel == 'SuperNOVA' then
         judgeLabel = 2
     end
     
@@ -271,7 +272,7 @@ local function validateAndGetValues(player, datetimeTable)
         player      = playerName,
         title       = title,
         artist      = artist,
-        md5         = md5,    -- 整合性チェックのMD5はうまく処理できていないので現在未実装
+        md5         = 'md5',    -- 整合性チェックのMD5はうまく処理できていないので現在未実装
         tm_y        = datetimeTable['year'],
         tm_m        = datetimeTable['month'],
         tm_d        = datetimeTable['day'],
@@ -285,7 +286,7 @@ end
 	@param  table
 	@return string
 --]]
-local function convertQueryVersion2(data)
+local function ConvertQueryVersion2(data)
     local b64 = YA_LIB.BASE64
     local values = {
         -- フォルダ
@@ -301,7 +302,7 @@ local function convertQueryVersion2(data)
         -- プレイヤー名
         pl = data.player,
         -- テーマ(テーマ名、カラー名 ':'区切り)
-        tm = table.concat({data.theme, data.sub}, ":"),
+        tm = join(':', {data.theme, data.sub}),
         -- PlayerOption
         po = data.option,
         -- DateTime(YYYY/mm/dd HH:ii)
@@ -309,15 +310,15 @@ local function convertQueryVersion2(data)
         -- GUID
         id = data.guid,
         -- レーダー(STREAM, VOLTAGE, AIR, FREEZE, CHAOS ':'区切り)
-        rd = table.concat({data.r_str, data.r_vol, data.r_air, data.r_frz, data.r_cha}, ":"),
+        rd = join(':', {data.r_str, data.r_vol, data.r_air, data.r_frz, data.r_cha}),
         -- 判定(W1, W2, W3, W4, W5, Miss, OK, MaxCombo ':'区切り)
-        jd = table.concat({data.j_w1, data.j_w2, data.j_w3, data.j_w4, data.j_w5, data.j_ms, data.j_ok, data.j_mc}, ":"),
-        -- 設定(TimingDifficulty, LifeDifficulty, Ultimate, JudgementLabel ':'区切り)
-        cf = table.concat({data.timing, data.life, data.ultimate, data.judge}, ":"),
+        jd = join(':', {data.j_w1, data.j_w2, data.j_w3, data.j_w4, data.j_w5, data.j_ms, data.j_ok, data.j_mc}),
+        -- 設定(TimingDifficulty, LifeDifficulty, Ultimate, JudgmentLabel ':'区切り)
+        cf = join(':', {data.timing, data.life, data.ultimate, data.judge}),
         -- ゲームモード・曲情報(GameStyle, GameMode, MeterType, Difficulty, Level ':'区切り)
-        gm = table.concat({data.style, data.mode, data.mt, data.difficulty, data.level}, ":"),
+        gm = join(':', {data.style, data.mode, data.mt, data.difficulty, data.level}),
         -- スコア(ScoreMode, Score, DancePoint, HighScore, Grade ':'区切り)
-        sc = table.concat({data.scoremode, data.score, data.dp, data.hscore, data.grade, data.fc}, ":"),
+        sc = join(':', {data.scoremode, data.score, data.dp, data.hscore, data.grade, data.fc}),
         -- 色
         cl = data.color,
         -- ハッシュ(未実装)
@@ -337,7 +338,7 @@ end
 	@param  table{year,month,day,hour,minute} プレイ日時が格納されたテーブル
 	@return table
 --]]
-local function generateUrl(self, player, datetimeTable)
+local function GenerateUrl(self, player, datetimeTable)
     if not datetimeTable then
         datetimeTable = {
             year   = Year(),
@@ -347,11 +348,11 @@ local function generateUrl(self, player, datetimeTable)
             minute = Minute(),
         }
     end
-    local params = validateAndGetValues(player, datetimeTable)
+    local params = ValidateAndGetValues(player, datetimeTable)
     if params.Error then
         return {Url = sendUrl, Query = nil, Error = params.Error}
     end
-    return {Url = sendUrl, Query = convertQueryVersion2(params), Error = nil}
+    return {Url = sendUrl, Query = ConvertQueryVersion2(params), Error = nil}
 end
 
 --- エラーメッセージを設定
@@ -359,26 +360,26 @@ end
 	@param  table{Profile,Song,Course}
 	@return table
 --]]
-local function setErrorMessage(self, messages)
-    errorMessages['Profile'] = messages.Profile or errorMessages.Profile
-    errorMessages['Song']    = messages.Song or errorMessages.Song
-    errorMessages['Course']  = messages.Course or errorMessages.Course
+local function SetErrorMessage(self, messages)
+    errorMessages.Profile = messages.Profile or errorMessages.Profile
+    errorMessages.Song    = messages.Song or errorMessages.Song
+    errorMessages.Course  = messages.Course or errorMessages.Course
     return errorMessages
 end
 
 --- 値取得用の関数を設定
 --[[
-	@param  table{RadarValue,Judgement,HighScore,Meter,ScoreType,ThemeColor,Ultimate}
+	@param  table{RadarValue,Judgment,HighScore,Meter,ScoreType,ThemeColor,Ultimate}
 	@return table
 --]]
-local function setFunctions(self, newFunctions)
-    functions['RadarValue'] = newFunctions.RadarValue or functions.RadarValue
-    functions['Judgement'] = newFunctions.Judgement or functions.Judgement
-    functions['HighScore'] = newFunctions.HighScore or functions.HighScore
-    functions['Meter'] = newFunctions.Meter or functions.Meter
-    functions['ScoreType'] = newFunctions.ScoreType or functions.ScoreType
-    functions['ThemeColor'] = newFunctions.ThemeColor or functions.ThemeColor
-    functions['Ultimate'] = newFunctions.Ultimate or functions.Ultimate
+local function SetFunctions(self, newFunctions)
+    functions.RadarValue = newFunctions.RadarValue or functions.RadarValue
+    functions.Judgment   = newFunctions.Judgment or functions.Judgment
+    functions.HighScore  = newFunctions.HighScore or functions.HighScore
+    functions.Meter      = newFunctions.Meter or functions.Meter
+    functions.ScoreType  = newFunctions.ScoreType or functions.ScoreType
+    functions.ThemeColor = newFunctions.ThemeColor or functions.ThemeColor
+    functions.Ultimate   = newFunctions.Ultimate or functions.Ultimate
     return functions
 end
 
@@ -386,10 +387,10 @@ end
 --[[
 	@param string query
 --]]
-local function shareResult(...)
-    local self, query = ...
+local function ShareResult(self, ...)
+    local query = ...
     if query then
-        GAMESTATE:ApplyGameCommand("urlnoexit,"..sendUrl..'?'..query)
+        GAMESTATE:ApplyGameCommand('urlnoexit,'..sendUrl..'?'..query)
     end
 end
 
@@ -400,8 +401,8 @@ end
 	@return Actor
 --]]
 local shareUrl = {}
-local function shareActor(...)
-    local self, enabledShare, codes = ...
+local function ShareActor(self, ...)
+    local enabledShare, codes = ...
     -- falseの時のみ無効（nil の時は有効）
     if enabledShare == false then
         return Def.Actor({})
@@ -428,7 +429,7 @@ local function shareActor(...)
                 local pn = (player == PLAYER_1) and 1 or 2
                 if GAMESTATE:IsPlayerEnabled(player) then
                     -- カスタムする場合は YA_SHARE:Url(player, shareDatetime)
-                    shareUrl[pn] = generateUrl(self, player, shareDatetime)
+                    shareUrl[pn] = GenerateUrl(self, player, shareDatetime)
                 end
             end
         end,
@@ -442,7 +443,7 @@ local function shareActor(...)
                 if shareUrl[pn]['Query'] then
                     -- ブラウザを開く
                     -- カスタムする場合は YA_SHARE:Send(shareUrl[pn]['Query'])
-                    shareResult(self, shareUrl[pn]['Query'])
+                    ShareResult(self, shareUrl[pn]['Query'])
                 else
                     -- エラーがあるので表示する
                     _SYS(shareUrl[pn]['Error'])
@@ -453,15 +454,18 @@ local function shareActor(...)
     -- コピーここまで
 end
 
--- デフォルトのエラーメッセージを設定
-setErrorMessage(self, defaultErrorMessages)
--- デフォルトの値設定用関数を設定
-setFunctions(self, defaultFunctions)
+local function Init(self)
+    -- デフォルトのエラーメッセージを設定
+    SetErrorMessage(self, defaultErrorMessages)
+    -- デフォルトの値設定用関数を設定
+    SetFunctions(self, defaultFunctions)
+end
 
 return {
-    Messages  = setErrorMessage,
-    Functions = setFunctions,
-    Send      = shareResult,
-    Url       = generateUrl,
-    Actor     = shareActor,
+    Init      = Init,
+    Messages  = SetErrorMessage,
+    Functions = SetFunctions,
+    Send      = ShareResult,
+    Url       = GenerateUrl,
+    Actor     = ShareActor,
 }

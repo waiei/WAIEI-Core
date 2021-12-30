@@ -55,6 +55,7 @@ YA_SCROLL = dofile(coreDir..'SCROLL.lua')
 
 -- リザルト連携
 YA_SHARE  = dofile(coreDir..'SHARE.lua')
+YA_SHARE:Init()
 
 -- QRコード関連
 YA_QRCODE  = dofile(coreDir..'QRCODE.lua')

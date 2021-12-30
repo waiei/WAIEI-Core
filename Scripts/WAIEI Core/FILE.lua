@@ -5,12 +5,12 @@
     @param  string ファイルパス
     @return table{}
 --]]
-local function openFile(...)
-    local self, path, accessType = ...
+local function OpenFile(self, ...)
+    local path, accessType = ...
     local file
 
     --- オープンしたファイルを閉じる
-    local function closeFile(self)
+    local function CloseFile(self)
         if file then
             file:Close()
             file:destroy()
@@ -22,12 +22,12 @@ local function openFile(...)
     --[[
 		@return string
     --]]
-    local function readFile(self)
+    local function ReadFile(self)
         if not file then
             return ''
         end
         local data = file:Read()
-        closeFile(self)
+        CloseFile(self)
         return data
     end
 
@@ -35,7 +35,7 @@ local function openFile(...)
     --[[
 		@return File
     --]]
-    local function getFilePointer(self)
+    local function GetFilePointer(self)
         return file or nil
     end
 
@@ -45,7 +45,7 @@ local function openFile(...)
         @param  string パラメータ
         @return 文字列あるいは空文字
     --]]
-    local function getParameter(self, parameterKey)
+    local function GetParameter(self, parameterKey)
         -- ファイルを開いていない
         if not file then
             return ''
@@ -69,16 +69,16 @@ local function openFile(...)
             end
             
             -- コメント行ではなく、目的のパラメータの行、あるいはパラメータ2行目以降の場合返り値に代入
-            if (string.find(lowLine, "^.*#"..lowParam..":.*") and (not string.find(lowLine, "^%/%/.*"))) or getParam ~= "" then
+            if (string.find(lowLine, '^.*#'..lowParam..':.*') and (not string.find(lowLine, '^%/%/.*'))) or getParam ~= '' then
                 -- URLだけはコメントの//を無視
                 if lowParam == 'url' then
                     getParam = line
                     break
                 end;
                 
-                getParam = getParam .. '' .. split("//",line)[1]
+                getParam = getParam .. '' .. split('//', line)[1]
                 -- セミコロンがあればチェック終了
-                if string.find(lowLine, ".*;") then
+                if string.find(lowLine, '.*;') then
                     break
                 end
             end
@@ -99,7 +99,7 @@ local function openFile(...)
 
         -- 値が一つだけの場合、終端のセミコロンを削除して返却
         if #params <= 2 then
-            return split(";",params[2])[1];
+            return split(';', params[2])[1];
         end;
         
         -- 値がコロン区切りで複数ある場合は全て繋げて一つの文字列で返却
@@ -111,7 +111,7 @@ local function openFile(...)
         --]]
         -- テーブルを「:」で結合して文字列にする
         local response = table.concat(params, ':', 2, #params)
-        return split(";",response)[1]
+        return split(';', response)[1]
     end
     
     -- ファイルの存在確認
@@ -124,10 +124,10 @@ local function openFile(...)
     file:Open(path, accessType or 1)
     
     return {
-        Read      = readFile,
-        File      = getFilePointer,
-        Close     = closeFile,
-        Parameter = getParameter,
+        Read      = ReadFile,
+        File      = GetFilePointer,
+        Close     = CloseFile,
+        Parameter = GetParameter,
     }
 end
 
@@ -138,24 +138,24 @@ end
     @param  Player プレイヤー
     @return table{}
 --]]
-local function openPlayerFile(...)
-    local self, filename, player = ...
+local function OpenPlayerFile(self, ...)
+    local filename, player = ...
     if player then
         -- PROFILEディレクトリが空ではない場合Localプロファイルを使用
         local path = PROFILEMAN:GetProfileDir('ProfileSlot_Player'..((player == PLAYER_1) and '1' or '2'))
         if path ~= '' then
             -- ファイルが取得できたら返却
-            local file = openFile(self, path..filename)
+            local file = OpenFile(self, path..filename)
             if file then
                 return file
             end
         end
     end
     -- プレイヤー指定なし、あるいはLocalのファイルがない場合はMachineのファイルを返却
-    return openFile(self, PROFILEMAN:GetProfileDir('ProfileSlot_Machine')..filename)
+    return OpenFile(self, PROFILEMAN:GetProfileDir('ProfileSlot_Machine')..filename)
 end
 
 return {
-    Open    = openFile,
-    Profile = openPlayerFile,
+    Open    = OpenFile,
+    Profile = OpenPlayerFile,
 }

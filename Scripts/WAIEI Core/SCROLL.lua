@@ -32,7 +32,7 @@ end
     @param  Player プレイヤー
     @return table{string mod, float speed}
 --]]
-local function getCurrentSpeed(player)
+local function GetCurrentSpeed(player)
     return speedList[player][currentSpeed[player]]
 end
 
@@ -41,7 +41,7 @@ end
     @param  Player プレイヤー
     @return string, float
 --]]
-local function getCurrentMod(player)
+local function GetCurrentMod(player)
     local ps = GAMESTATE:GetPlayerState(player)
     local pop = ps:GetPlayerOptions("ModsLevel_Preferred")
     local mod = 'x'
@@ -64,8 +64,8 @@ end
     @param  Player プレイヤー
     @return int
 --]]
-local function getCurrentSpeedKey(player)
-    local mod ,speed = getCurrentMod(player)
+local function GetCurrentSpeedKey(player)
+    local mod ,speed = GetCurrentMod(player)
     local current = 1
     local list    = speedList[player]
     for i=current,#list do
@@ -83,9 +83,9 @@ end
 --[[
     LocalまたはMachineのSpeedMod.txtを取得する
     @param  Player プレイヤー
-    @return table,{{{string mod , float speed},...},...}, int key
+    @return table,{{{string mod , float speed},...},...}, int current_index
 --]]
-local function loadSpeedList(self, player)
+local function LoadSpeedList(self, player)
     local file = YA_FILE:Profile('SpeedMods.txt', player)
     local speeds = file and file:Read() or ''
     if speeds == '' then
@@ -95,23 +95,23 @@ local function loadSpeedList(self, player)
     for i=1, #strSpeeds do
         if string.find(strSpeeds[i], '[%d.]+x') then
             speedList[player][i] = {
-                mod    = 'x',
+                mod   = 'x',
                 speed = tonumber(split('x', strSpeeds[i])[1]),
             }
         elseif string.find(strSpeeds[i], 'C[%d.]+') then
             speedList[player][i] = {
-                mod    = 'c',
+                mod   = 'c',
                 speed = tonumber(split('C', strSpeeds[i])[2]),
             }
         elseif string.find(strSpeeds[i], 'm[%d.]+') then
             speedList[player][i] = {
-                mod    = 'm',
+                mod   = 'm',
                 speed = tonumber(split('m', strSpeeds[i])[2]),
             }
         end
     end
     
-    currentSpeed[player] = getCurrentSpeedKey(player)
+    currentSpeed[player] = GetCurrentSpeedKey(player)
     
     return speedList, currentSpeed[player]
 end
@@ -121,7 +121,7 @@ end
     @param  Player プレイヤー
     @return int
 --]]
-local function getNextSpeedKey(player)
+local function GetNextSpeedKey(player)
     local list = speedList[player]
     local mod  = list[currentSpeed[player]]['mod']
     for i=1,#list do
@@ -138,7 +138,7 @@ end
     @param  Player プレイヤー
     @return int
 --]]
-local function getPrevSpeedKey(player)
+local function GetPrevSpeedKey(player)
     local list = speedList[player]
     local mod  = list[currentSpeed[player]]['mod']
     for i=1,#list do
@@ -158,7 +158,7 @@ end
     @param  float スピード
     @return table{string mod , float speed}
 --]]
-local function setSpeed(player, mod, speed)
+local function SetSpeed(player, mod, speed)
     local ps = GAMESTATE:GetPlayerState(player)
     local pop = ps:GetPlayerOptions("ModsLevel_Preferred")
     local post = ps:GetPlayerOptions("ModsLevel_Stage")
@@ -199,20 +199,20 @@ end
     @param  Player プレイヤー
     @return table{string mod, float speed}
 --]]
-local function setNextSpeed(self, player)
-    local key    = getNextSpeedKey(player)
+local function SetNextSpeed(self, player)
+    local key    = GetNextSpeedKey(player)
     local params = speedList[player][key]
-    return setSpeed(player, params['mod'], params['speed'])
+    return SetSpeed(player, params['mod'], params['speed'])
 end
 --- 前のスピードに設定する
 --[[
     @param  Player プレイヤー
     @return table{string mod, float speed}
 --]]
-local function setPrevSpeed(self, player)
-    local key    = getPrevSpeedKey(player)
+local function SetPrevSpeed(self, player)
+    local key    = GetPrevSpeedKey(player)
     local params = speedList[player][key]
-    return setSpeed(player, params['mod'], params['speed'])
+    return SetSpeed(player, params['mod'], params['speed'])
 end
 
 --- プレイヤーの現在のスピードを表示用に整形して取得する
@@ -220,8 +220,8 @@ end
     @param Player プレイヤー
     @return string
 --]]
-local function getDisplayCurrentSpeed(self, player)
-    local current = getCurrentSpeed(player)
+local function GetDisplayCurrentSpeed(self, player)
+    local current = GetCurrentSpeed(player)
     if current['mod'] == 'c' then
         return 'C'..current['speed']
     elseif current['mod'] == 'm' then
@@ -235,7 +235,7 @@ end
     @param Player プレイヤー
     @param float Reverseの値（0～1）
 --]]
-local function setReverse(player, reverse)
+local function SetReverse(player, reverse)
     local ps = GAMESTATE:GetPlayerState(player)
     local pop = ps:GetPlayerOptions("ModsLevel_Preferred")
     local post = ps:GetPlayerOptions("ModsLevel_Stage")
@@ -252,7 +252,7 @@ end
     @param  Player プレイヤー
     @return float
 --]]
-local function getCurrentReverse(player)
+local function GetCurrentReverse(player)
     local ps = GAMESTATE:GetPlayerState(player)
     local pop = ps:GetPlayerOptions("ModsLevel_Preferred")
     return ({pop:Reverse()})[1]
@@ -263,7 +263,7 @@ end
     @param  Player プレイヤー
     @return string
 --]]
-local function getDisplayReverse(value)
+local function GetDisplayReverse(value)
     return (value >= 0.5) and 'Reverse' or 'Standard'
 end
 
@@ -272,8 +272,8 @@ end
     @param  Player プレイヤー
     @return string
 --]]
-local function getDisplayCurrentReverse(self, player)
-    return getDisplayReverse(getCurrentReverse(player))
+local function GetDisplayCurrentReverse(self, player)
+    return GetDisplayReverse(GetCurrentReverse(player))
 end
 
 --- GamePlay用Actor
@@ -286,8 +286,8 @@ end
 local animeSpeed = 16
 local actorSpeedParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
 local actorReverseParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
-local function scrollActor(...)
-    local self,enabledSpeed,enabledReverse,codes = ...
+local function ScrollActor(self, ...)
+    local enabledSpeed,enabledReverse,codes = ...
     if enabledSpeed == false and enabledReverse == false then
         return Def.Actor({})
     end
@@ -306,8 +306,8 @@ local function scrollActor(...)
             local codeScrollStandard = inTable(params.Name, codes['ScrollStandard'])
             local codeScrollReverse  = inTable(params.Name, codes['ScrollReverse'])
             if enabledSpeed ~= false and (codeSpeedUp or codeSpeedDown) then
-                local key = codeSpeedUp and getNextSpeedKey(player) or getPrevSpeedKey(player)
-                local current = getCurrentSpeed(player)
+                local key = codeSpeedUp and GetNextSpeedKey(player) or GetPrevSpeedKey(player)
+                local current = GetCurrentSpeed(player)
                 actorSpeedParams[player]['mod']     = current['mod']
                 actorSpeedParams[player]['current'] = current['speed']
                 actorSpeedParams[player]['new']     = speedList[player][key]['speed']
@@ -318,18 +318,18 @@ local function scrollActor(...)
                     Player  = player,
                     Mod     = speedList[player][key]['mod'],
                     Speed   = speedList[player][key]['speed'],
-                    Display = getDisplayCurrentSpeed(self, player),
+                    Display = GetDisplayCurrentSpeed(self, player),
                 })
             end
             if enabledReverse ~= false and (codeScrollStandard or codeScrollReverse) then
-                actorReverseParams[player]['current'] = getCurrentReverse(player)
+                actorReverseParams[player]['current'] = GetCurrentReverse(player)
                 actorReverseParams[player]['new']     = codeScrollStandard and 0 or 1
                 actorReverseParams[player]['anime']   = animeSpeed
                 self:playcommand('ChangeReverse'..ToEnumShortString(player))
                 MESSAGEMAN:Broadcast('ChangeReverse', {
                     Player  = player,
                     Reverse = actorReverseParams[player]['new'],
-                    Display = getDisplayReverse(actorReverseParams[player]['new']),
+                    Display = GetDisplayReverse(actorReverseParams[player]['new']),
                 })
             end
         end,
@@ -338,12 +338,12 @@ local function scrollActor(...)
             local player = PLAYER_1
             local params = actorSpeedParams[player]
             if params['anime'] > 0 then
-                setSpeed(player, params['mod'], params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
+                SetSpeed(player, params['mod'], params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
                 actorSpeedParams[player]['anime'] = params['anime'] - 1
                 self:sleep(0.01)
                 self:queuecommand('ChangeSpeed'..ToEnumShortString(player))
             else
-                setSpeed(player, params['mod'], params['new'])
+                SetSpeed(player, params['mod'], params['new'])
             end
         end,
         ChangeSpeedP2Command = function(self)
@@ -351,12 +351,12 @@ local function scrollActor(...)
             local player = PLAYER_2
             local params = actorSpeedParams[player]
             if params['anime'] > 0 then
-                setSpeed(player, params['mod'], params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
+                SetSpeed(player, params['mod'], params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
                 actorSpeedParams[player]['anime'] = params['anime'] - 1
                 self:sleep(0.01)
                 self:queuecommand('ChangeSpeed'..ToEnumShortString(player))
             else
-                setSpeed(player, params['mod'], params['new'])
+                SetSpeed(player, params['mod'], params['new'])
             end
         end,
         ChangeReverseP1Command = function(self)
@@ -364,12 +364,12 @@ local function scrollActor(...)
             local player = PLAYER_1
             local params = actorReverseParams[player]
             if params['anime'] > 0 then
-                setReverse(player, params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
+                SetReverse(player, params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
                 actorReverseParams[player]['anime'] = params['anime'] - 1
                 self:sleep(0.01)
                 self:queuecommand('ChangeReverse'..ToEnumShortString(player))
             else
-                setReverse(player, params['new'])
+                SetReverse(player, params['new'])
             end
         end,
         ChangeReverseP2Command = function(self)
@@ -377,22 +377,22 @@ local function scrollActor(...)
             local player = PLAYER_2
             local params = actorReverseParams[player]
             if params['anime'] > 0 then
-                setReverse(player, params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
+                SetReverse(player, params['current'] + (params['new'] - params['current']) * (animeSpeed - params['anime']) / animeSpeed)
                 actorReverseParams[player]['anime'] = params['anime'] - 1
                 self:sleep(0.01)
                 self:queuecommand('ChangeReverse'..ToEnumShortString(player))
             else
-                setReverse(player, params['new'])
+                SetReverse(player, params['new'])
             end
         end,
     })
 end
 
 return {
-    Load    = loadSpeedList,
-    Next    = setNextSpeed,
-    Prev    = setPrevSpeed,
-    Actor   = scrollActor,
-    Speed   = getDisplayCurrentSpeed,
-    Reverse = getDisplayCurrentReverse,
+    Load    = LoadSpeedList,
+    Next    = SetNextSpeed,
+    Prev    = SetPrevSpeed,
+    Actor   = ScrollActor,
+    Speed   = GetDisplayCurrentSpeed,
+    Reverse = GetDisplayCurrentReverse,
 }

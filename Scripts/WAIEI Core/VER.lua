@@ -1,12 +1,13 @@
 -- バージョン
-local ver = 28
-local date = '20210505'
+local main = 0
+local ver = 33
+local date = '20211231'
 
 --- WAIEI Coreのバージョンを取得
 --[[
     @return string
 --]]
-local function coreVer()
+local function GetCoreVer(self)
     return ver
 end
 
@@ -14,36 +15,36 @@ end
 --[[
     @return string
 --]]
-local function coreDisplayVer()
-    return '0.'..coreVer()..'.'..date
+local function GetCoreDisplayVer(self)
+    return ''..main..'.'..GetCoreVer(self)..'.'..date
 end
 
 local __SMV__ = nil
-local function SetSMVersion()
+local function SetSMVersion(self)
     local v=string.lower(ProductVersion())
-    if string.find(v,"5.3",0,true) then
+    if string.find(v, '5.3', 0, true) then
     -- 5.3.x
         __SMV__= 5300
-    elseif string.find(v,"5.2",0,true) then
+    elseif string.find(v, '5.2', 0, true) then
     -- 5.2.x
         __SMV__= 5200
-    elseif string.find(v,"5.1.-",0,true) then
+    elseif string.find(v, '5.1.-', 0, true) then
     -- 5.1.-x
         __SMV__= 5190
-    elseif string.find(v,"5.1",0,true) then
+    elseif string.find(v, '5.1', 0, true) then
     -- 5.1.x
         __SMV__= 5100
-    elseif string.find(v,"5.0.7rc",0,true) then
+    elseif string.find(v, '5.0.7rc', 0, true) then
     -- 5.0.7rc
         __SMV__= 69
-    elseif string.find(v,"5.0.%d+$") then
+    elseif string.find(v, '5.0.%d+$') then
     -- 5.0.5 - 5.0.12
     -- 50 - 120
         __SMV__= tonumber(split('%.', v)[3])*10
-    elseif string.find(v,"v5.0 beta 4",0,true) then
+    elseif string.find(v, 'v5.0 beta 4', 0, true) then
     -- b4, b4a
         __SMV__= 40
-    elseif string.find(v,"v5.0 beta",0,true) then
+    elseif string.find(v, 'v5.0 beta', 0, true) then
     -- b1 - b3
         __SMV__= 30
     else
@@ -56,12 +57,12 @@ end
 --[[
     @return int
 --]]
-local function GetSMVersion()
-    return __SMV__ or SetSMVersion()
+local function GetSMVersion(self)
+    return __SMV__ or SetSMVersion(self)
 end
 
 return {
-    Core    = coreVer,
-    Display = coreDisplayVer,
+    Core    = GetCoreVer,
+    Display = GetCoreDisplayVer,
     Version = GetSMVersion
 }
