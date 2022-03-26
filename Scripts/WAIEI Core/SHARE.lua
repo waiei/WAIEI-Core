@@ -123,8 +123,8 @@ local function ValidateAndGetValues(player, datetimeTable)
     local pr  = PROFILEMAN:GetProfile(player)
     
     -- テーマ関係なく取得可能な値
-    local folder = YA_GROUP:FolderName(song)
-    local group = song:GetGroupName()
+    local folder      = YA_GROUP:FolderName(song)
+    local group       = song:GetGroupName()
     local menuColor   = YA_GROUP:MenuColor(song)
     local meterType   = YA_GROUP:MeterType(song)
     local original    = YA_GROUP:OriginalName(song)

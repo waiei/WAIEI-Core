@@ -1,7 +1,7 @@
---[[ Group_Lua v20211231]]
+--[[ Group_Lua v20220223]]
 
--- このファイルの相対パス
-local relativePath = string.gsub(string.sub(debug.getinfo(1).source, 2), '(.+/)[^/]+', '%1')
+-- このファイルの絶対パス
+local absolutePath = string.gsub(string.sub(debug.getinfo(1).source, 2), '(.+/)[^/]+', '%1')
 
 -- Rawデータ
 local groupRaw = {}
@@ -22,8 +22,8 @@ local songPathList = {
 -- 同じディレクトリにgroup_ini.luaがある場合のみ読みこみ
 local groupIniFile = 'group_ini.lua'
 local groupIni
-if FILEMAN:DoesFileExist(relativePath..groupIniFile) then
-    groupIni = dofile(relativePath..groupIniFile)
+if FILEMAN:DoesFileExist(absolutePath..groupIniFile) then
+    groupIni = dofile(absolutePath..groupIniFile)
 end
 
 -- ファイルを検索してパスを返却（大文字小文字を無視）
@@ -295,7 +295,6 @@ local function Scan(self, ...)
     SetRaw(groupName, groupLuaPath, groupIniPath)
 
     -- 情報を取得
-    groupData[groupName] = {}
     for key,_ in pairs(keyType) do
         SetData(groupName, key)
     end
@@ -308,6 +307,19 @@ local function GetFallback(key)
         return nil
     end
     return FormatValue(defaultDefine[key].default or nil)
+end
+
+-- テーブルを返却した場合、上書きされる可能性があるので配列をコピーして返却する
+-- 配列以外はそのまま返却する
+local function CopyTable(tbl)
+    if type(tbl) ~= 'table' then
+        return tbl
+    end
+    local ret = {}
+    for k,v in pairs(tbl) do
+        ret[k] = v
+    end
+    return ret
 end
 
 -- カスタムパラメータから指定キーの定義と値をテーブルで取得
@@ -339,35 +351,35 @@ local function GetCustomValue(self, groupOrSong, key, ...)
         data = {groupData[key][groupName], {}}
     end
     data[1] = data[1] or (defaultDefine[key] and defaultDefine[key].default or nil)
-    return data[1], data[2]
+    return CopyTable(data[1]), CopyTable(data[2])
 end
 
 -- グループ名を取得
 -- p1:グループ名
 -- 曲単位のパラメータ配列 は破棄
 local function GetGroupName(self, groupName)
-    return groupData.Name and (groupData.Name[groupName] or SONGMAN:ShortenGroupName(groupName)) or nil
+    return CopyTable(groupData.Name and (groupData.Name[groupName] or SONGMAN:ShortenGroupName(groupName)) or nil)
 end
 
 -- グループカラーを取得
 -- p1:グループ名
 -- 曲単位のパラメータ配列 は破棄
 local function GetGroupColor(self, groupName)
-    return groupData.GroupColor and groupData.GroupColor[groupName] or nil
+    return CopyTable(groupData.GroupColor and groupData.GroupColor[groupName] or nil)
 end
 
 -- URLを取得
 -- p1:グループ名
 -- 曲単位のパラメータ配列 は破棄
 local function GetUrl(self, groupName)
-    return groupData.Url and groupData.Url[groupName] or nil
+    return CopyTable(groupData.Url and groupData.Url[groupName] or nil)
 end
 
 -- コメントを取得
 -- p1:グループ名
 -- 曲単位のパラメータ配列 は破棄
 local function GetComment(self, groupName)
-    return groupData.Comment and groupData.Comment[groupName] or nil
+    return CopyTable(groupData.Comment and groupData.Comment[groupName] or nil)
 end
 
 -- song型からORIGINALNAMEを取得
@@ -386,9 +398,9 @@ local function GetOriginalName(self, song)
             end
         end
     end
-    return ret or groupData.OriginalName[song:GetGroupName()]
+    return CopyTable(ret or groupData.OriginalName[song:GetGroupName()]
         or song:GetGroupName()
-        or nil
+        or nil)
 end
 
 -- song型からMETERTYPEを取得
@@ -407,9 +419,9 @@ local function GetMeterType(self, song)
             end
         end
     end
-    return ret or groupData.MeterType[song:GetGroupName()]
+    return CopyTable(ret or groupData.MeterType[song:GetGroupName()]
         or defaultDefine.MeterType.default
-        or nil
+        or nil)
 end
 
 -- song型からMENUCOLORを取得
@@ -428,9 +440,9 @@ local function GetMenuColor(self, song)
             end
         end
     end
-    return ret or groupData.MenuColor[song:GetGroupName()]
+    return CopyTable(ret or groupData.MenuColor[song:GetGroupName()]
         or defaultDefine.MenuColor.default
-        or nil
+        or nil)
 end
 
 -- song型からLYRICTYPEを取得
@@ -448,7 +460,7 @@ local function GetLyricType(self, song)
     end
     data = data or {groupData.LyricType[song:GetGroupName()], {}}
     data[1] = data[1] or (defaultDefine.LyricType and defaultDefine.LyricType.default or nil)
-    return data[1], data[2]
+    return CopyTable(data[1]), CopyTable(data[2])
 end
 
 -- ソートファイルを作成
@@ -620,7 +632,7 @@ AddTargetKey(nil, 'GroupColor',   'color')
 AddTargetKey(nil, 'Url',          'string')
 AddTargetKey(nil, 'Comment',      'string')
 AddTargetKey(nil, 'OriginalName', 'string')
-AddTargetKey(nil, 'MeterType',    'string', {Default = 'DDR', DDRX = 'DDR X', X = 'DDR X', ITG = 'ITG'})
+AddTargetKey(nil, 'MeterType',    'string', {Default = 'DDR', DDR = 'DDR', DDRX = 'DDR X', X = 'DDR X', ITG = 'ITG'})
 AddTargetKey(nil, 'MenuColor',    'color')
 AddTargetKey(nil, 'LyricType',    'mixed', {Default = 'Default'})
 AddTargetKey(nil, 'Folder',       'mixed')

@@ -60,6 +60,20 @@ YA_SHARE:Init()
 -- QRコード関連
 YA_QRCODE  = dofile(coreDir..'QRCODE.lua')
 
+-- ライフ関連
+YA_LIFE  = dofile(coreDir..'LIFE.lua')
+
+---- 初期化
+-- レセプターの位置
+YA_LIB.GROUP:AddKey('ReceptorPosition', 'mixed', {
+    Default       = 'Default',
+    stepmania3    = 'stepmania3',
+    stepmania5    = 'stepmania5',
+    projectoutfox = 'projectoutfox',
+    simplylove    = 'simplylove',
+    cyberiastyle  = 'cyberiastyle',
+    waiei         = 'waiei',
+})
 
 --[[
 MIT License

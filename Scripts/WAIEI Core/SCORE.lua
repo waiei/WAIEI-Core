@@ -126,6 +126,7 @@ end
     @param  string 計算式
     @return ActorFrame
 --]]
+local songMaximumScore = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
 local function scoreActor(...)
     local self, newScoreType = ...
     scoreType = string.lower(newScoreType or defaultScoreType)
@@ -138,15 +139,26 @@ local function scoreActor(...)
             -- 曲が変わるタイミングでステップカウントのリセットとトータルステップ数の取得
             CurrentSongChangedMessageCommand = function(self)
                 stepCount = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
-                for player in ivalues(PlayerNumber) do
-                    local step = GAMESTATE:GetCurrentSteps(player)
+                for pn in ivalues(PlayerNumber) do
+                    local step = GAMESTATE:GetCurrentSteps(pn)
                     if step then
-                        local radarValues = step:GetRadarValues(player)
-                        stepSize[player] = math.max(
+                        local radarValues = step:GetRadarValues(pn)
+                        stepSize[pn] = math.max(
                             radarValues:GetValue('RadarCategory_TapsAndHolds')
                             + radarValues:GetValue('RadarCategory_Holds')
                             + radarValues:GetValue('RadarCategory_Rolls'),
                         1);
+                    end
+                    -- スコアの最大値も先に取得しておく
+                    if scoreType == 'classic' then
+                        local meter = math.max(math.min(GAMESTATE:GetCurrentSteps(pn):GetMeter(), 10), 1)
+                        songMaximumScore[pn] = GAMESTATE:GetCurrentSong():IsLong()
+                            and (GAMESTATE:GetCurrentSong():IsMarathon() and meter*30000000 or meter*20000000)
+                            or meter*10000000
+                    elseif scoreType == 'hybrid' then
+                        songMaximumScore[pn] = GAMESTATE:GetCurrentSong():IsLong()
+                            and (GAMESTATE:GetCurrentSong():IsMarathon() and 300000000 or 200000000)
+                            or 100000000
                     end
                 end
             end,
@@ -155,12 +167,31 @@ local function scoreActor(...)
                 if (GAMESTATE:GetPlayerState(params.Player):GetPlayerController() == 'PlayerController_Autoplay') then
                     -- オートプレイの場合スコアは0
                     stats:SetScore(0)
+                    return
+                end
+                -- OutFoxはこの方法では正しく動かない
+				if YA_VER:Version() < 5300 and params.TapNoteScore and
+				   params.TapNoteScore ~= 'TapNoteScore_AvoidMine' and
+				   params.TapNoteScore ~= 'TapNoteScore_HitMine' and
+				   params.TapNoteScore ~= 'TapNoteScore_CheckpointMiss' and
+				   params.TapNoteScore ~= 'TapNoteScore_CheckpointHit' and
+				   params.TapNoteScore ~= 'TapNoteScore_None'
+				then
+                    local sendParams = params
+                    sendParams.PlayerNumber = params.Player
+                    self:playcommand('UpdateScore', sendParams)
+				end
+            end,
+            -- OutFox用。ネット対戦でうまく動かないがOutFoxはそもそもネット対戦非対応
+            -- A4.13時点ではAutoPlay CPUもW1～Miss判定時にメッセージが飛ばない
+            ScoreChangedMessageCommand = function (self, params)
+				if YA_VER:Version() >= 5300 then
+                    self:playcommand('UpdateScore', params)
                 end
             end,
-            ScoreChangedMessageCommand = function (self, params)
+            UpdateScoreCommand = function(self, params)
                 local pn = params.PlayerNumber
                 local stats = STATSMAN:GetCurStageStats():GetPlayerStageStats(pn)
-                -- オートプレイではない
                 stepCount[pn] = stepCount[pn] + 1
                 if stats:GetFailed() then
                     -- すでに落ちてる場合はスコア加算をしない
@@ -172,19 +203,17 @@ local function scoreActor(...)
                 elseif scoreType == 'sn2' then
                     stats:SetScore(getSN2Score(params, stats, stepSize[pn]))
                 elseif scoreType == 'classic' then
-                    local meter = math.max(math.min(GAMESTATE:GetCurrentSteps(pn):GetMeter(),10),1);
                     stats:SetScore(getClassicScore(
                         params, stats, stepSize[pn], stepCount[pn],
-                        GAMESTATE:GetCurrentSong():IsLong() and (GAMESTATE:GetCurrentSong():IsMarathon() and meter*30000000 or meter*20000000) or meter*10000000
+                        songMaximumScore[pn] or 1
                     ))
                 elseif scoreType == 'hybrid' then
                     stats:SetScore(getHybridScore(
                         params, stats, stepSize[pn], stepCount[pn],
-                        GAMESTATE:GetCurrentSong():IsLong() and (GAMESTATE:GetCurrentSong():IsMarathon() and 300000000 or 200000000) or 100000000
+                        songMaximumScore[pn] or 1
                     ))
-                    stats:SetScore(getHybridScore(params, stats, stepSize[pn], stepCount[pn]))
                 end
-            end
+            end,
         }),
     })
 end

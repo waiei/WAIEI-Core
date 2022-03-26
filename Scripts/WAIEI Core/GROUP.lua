@@ -1,7 +1,7 @@
 -- Group.ini/Lua
 
 local scanned = false
-YA_LIB.GROUP:AddKey('ReceptorPosition', 'mixed')
+local afterFunc = {}
 
 --- Songから楽曲のフォルダ名を取得する
 --[[
@@ -25,11 +25,14 @@ end
 --- グループ名を取得
 --[[
     @param  string グループフォルダ名
-    @return Color
+    @return string
 --]]
 local function GetGroupName(self, groupName)
     if not scanned then ScanAllSongs(self) end
-    return YA_LIB.GROUP:Name(groupName)
+    local value = YA_LIB.GROUP:Name(groupName)
+    return not afterFunc.GroupName
+        and value
+        or (afterFunc.GroupName and afterFunc.GroupName(value, groupName) or '')
 end
 
 --- グループカラーを取得
@@ -39,8 +42,13 @@ end
 --]]
 local function GetGroupColor(self, groupName)
     if not scanned then ScanAllSongs(self) end
-    return YA_LIB.GROUP:GroupColor(groupName)
-        or ((groupName ~= '') and SONGMAN:GetSongGroupColor(groupName) or Color('White'))
+    local value = YA_LIB.GROUP:GroupColor(groupName)
+    return not afterFunc.GroupColor
+        and (value
+            or ((groupName ~= '')
+                    and SONGMAN:GetSongGroupColor(groupName)
+                    or Color('White')))
+        or (afterFunc.GroupColor and afterFunc.GroupColor(value, groupName) or color('#ffffffff'))
 end
 
 --- 楽曲カラーを取得
@@ -50,7 +58,10 @@ end
 --]]
 local function GetSongMenuColor(self, song)
     if not scanned then ScanAllSongs(self) end
-    return YA_LIB.GROUP:MenuColor(song)
+    local value = YA_LIB.GROUP:MenuColor(song)
+    return not afterFunc.MenuColor
+        and value
+        or (afterFunc.MenuColor and afterFunc.MenuColor(value, song) or color('#ffffffff'))
 end
 
 --- MeterTypeを取得
@@ -60,7 +71,10 @@ end
 --]]
 local function GetSongMeterType(self, song)
     if not scanned then ScanAllSongs(self) end
-    return YA_LIB.GROUP:MeterType(song)
+    local value = YA_LIB.GROUP:MeterType(song)
+    return not afterFunc.MeterType
+        and value
+        or (afterFunc.MeterType and afterFunc.MeterType(value, song) or '')
 end
 
 --- オリジナルグループ名を取得
@@ -70,7 +84,10 @@ end
 --]]
 local function GetSongOriginalName(self, song)
     if not scanned then ScanAllSongs(self) end
-    return YA_LIB.GROUP:OriginalName(song)
+    local value = YA_LIB.GROUP:OriginalName(song)
+    return not afterFunc.OriginalName
+        and value
+        or (afterFunc.OriginalName and afterFunc.OriginalName(value, song) or '')
 end
 
 --- URLを取得
@@ -80,7 +97,10 @@ end
 --]]
 local function GetUrl(self, groupName)
     if not scanned then ScanAllSongs(self) end
-    return YA_LIB.GROUP:Url(groupName) or ''
+    local value = YA_LIB.GROUP:Url(groupName)
+    return not afterFunc.Url
+        and value
+        or (afterFunc.Url and afterFunc.Url(value, groupName) or '')
 end
 
 --- COMMENTを取得
@@ -93,7 +113,10 @@ local function GetComment(self, groupName, ...)
     local enableLineBreaks = ...
     enableLineBreaks = (enableLineBreaks == nil) and true or enableLineBreaks
     if not scanned then ScanAllSongs(self) end
-    local comment = YA_LIB.GROUP:Comment(groupName, enableLineBreaks) or ''
+    local value = YA_LIB.GROUP:Comment(groupName, enableLineBreaks) or ''
+    local comment = not afterFunc.Comment
+        and value
+        or (afterFunc.Comment and afterFunc.Comment(value, groupName) or '')
     if enableLineBreaks then
         return comment
     end
@@ -134,9 +157,10 @@ end
 local function GetReceptorPosition(self, song)
     if not scanned then ScanAllSongs(self) end
     if not song then return '' end
-    local group = song:GetGroupName()
-    local val = YA_LIB.GROUP:Custom(group, 'ReceptorPosition', song)
-    return val or {}
+    local value = YA_LIB.GROUP:Custom(song, 'ReceptorPosition')
+    return not afterFunc.ReceptorPosition
+        and value
+        or (afterFunc.ReceptorPosition and afterFunc.ReceptorPosition(value, song) or {})
 end
 
 --- ユーザーソートファイルを作成
@@ -152,6 +176,17 @@ local function CreateSortText(self, filename, ...)
     YA_LIB.GROUP:Sort(filename, true, addGroup)
 end
 
+-- 値取得後に呼び出す関数
+--- 取得した値を加工して使用したい場合に利用
+--- funcに渡す関数はp1に取得した値を、p2にフォルダ名またはsong型を設定する
+--[[
+    @param key  対象のGroup.lua/iniキー
+    @param func 実行する関数
+--]]
+local function SetAfterFunction(self, key, func)
+    afterFunc[key] = func
+end
+
 return {
     FolderName       = GetSongFolderName,
     Scan             = ScanAllSongs,
@@ -165,4 +200,5 @@ return {
     LyricType        = GetLyricType,
     SortSongs        = CreateSortText,
     ReceptorPosition = GetReceptorPosition,
+    AfterFunction    = SetAfterFunction,
 }
