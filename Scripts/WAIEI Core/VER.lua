@@ -1,7 +1,7 @@
 -- バージョン
 local main = 0
-local ver = 40
-local date = '20220326'
+local ver = 51
+local date = '20220915'
 
 --- WAIEI Coreのバージョンを取得
 --[[
@@ -59,6 +59,8 @@ local function SetSMVersion(self)
         else
             __SMV__= 5300
         end
+    else
+        __SMV__= 0
     end
     return __SMV__
 end
