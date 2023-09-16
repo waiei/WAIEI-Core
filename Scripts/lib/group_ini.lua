@@ -1,14 +1,38 @@
---[[ Group_Ini v20210916 ]]
+--[[ Group_Ini v20230704 ]]
 
+--[[
 -- グローバル関数にFindValueが存在するが、5.0と異なるので5.1のコードを利用
+-- (c) 2005-2011 Glenn Maynard, Chris Danford, SSC
+-- All rights reserved.
+--
+-- Permission is hereby granted, free of charge, to any person obtaining a
+-- copy of this software and associated documentation files (the
+-- "Software"), to deal in the Software without restriction, including
+-- without limitation the rights to use, copy, modify, merge, publish,
+-- distribute, and/or sell copies of the Software, and to permit persons to
+-- whom the Software is furnished to do so, provided that the above
+-- copyright notice(s) and this permission notice appear in all copies of
+-- the Software and that both the above copyright notice(s) and this
+-- permission notice appear in supporting documentation.
+--
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+-- OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+-- MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+-- THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS
+-- INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT
+-- OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+-- OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+-- OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+-- PERFORMANCE OF THIS SOFTWARE.
+--]]
 local function _FindValue_(tab, value)
-	for key, name in pairs(tab) do
-		if value == name then
-			return key
-		end
-	end
+    for key, name in pairs(tab) do
+        if value == name then
+            return key
+        end
+    end
 
-	return nil
+    return nil
 end
 
 -- 特殊な変換が必要なキー一覧
@@ -29,114 +53,178 @@ local spKeyList = {
 -- 変換処理
 local functionList = {
     -- SortList：Front,Rear,Hiddenを統合
-    SortList = function(define, data)
+    SortList = function(defineValues, _)
         local function FlatTable(v)
             if not v then return {} end
             local cnt = 0
-            for i,k in pairs(v) do
-                cnt = cnt+1
+            for _, _ in pairs(v) do
+                cnt = cnt + 1
             end
             local d = {}
             if v.Default then
-                d[#d+1] = v.Default
+                d[#d + 1] = v.Default
             end
-            for i=1, cnt-1 do
-                if v['Group'..i] then
-                    d[#d+1] = v['Group'..i]
+            for i = 1, cnt - 1 do
+                if v['Group' .. i] then
+                    d[#d + 1] = v['Group' .. i]
                 end
             end
             return d
         end
         return {
-            {Front = -1, Default = 0, Rear = 1, Hidden = 0,},
-            Rear   = FlatTable(define.sortlist_rear),
-            Front  = FlatTable(define.sortlist_front),
-            Hidden = FlatTable(define.sortlist_hidden),
+            { Front = -1, Default = 0, Rear = 1, Hidden = 0, },
+            Rear   = FlatTable(defineValues.sortlist_rear),
+            Front  = FlatTable(defineValues.sortlist_front),
+            Hidden = FlatTable(defineValues.sortlist_hidden),
         }
     end,
     -- Url：分割された状態なので統合する
-    Url = function(define, data)
-        return define.url and string.format('%s:%s', define.url.Default or '', define.url.Group1 or '') or ''
+    Url = function(defineValues, _)
+        if not defineValues.url then return '' end
+        local url = defineValues.url.Default or ''
+        local i = 0
+        while(true) do
+            i = i+1
+            if not defineValues.url['Group'..i] then break end
+            url = url..':'..defineValues.url['Group'..i]
+        end
+        return url
     end,
-    -- Comment：改行を意味する「|」を改行コードに変換
-    Comment = function(define, data)
-        if not define.comment then return '' end
-        for tmpK,tmpV in pairs(define.comment) do
-            if data.comment.Default and #data.comment.Default > 0 then
-                return define.comment.Default..'\n'..join('\n', data.comment.Default)
-            else
-                return define.comment.Default
+    -- Comment：改行を意味する「|」を改行コードに変換、途中「:」が含まれてると分割されるので統合
+    Comment = function(defineValues, dataValues)
+        if not defineValues.comment then return '' end
+        local comment = ''
+        local i = -1
+        while(true) do
+            i = i+1
+            local target = (i == 0) and 'Default' or 'Group'..i
+            if not defineValues.comment[target] then break end
+            comment = comment..((i == 0) and '' or ':')..defineValues.comment[target]
+            for j = 1, #dataValues.comment[target] do
+                comment = comment..'\n'..dataValues.comment[target][j]
             end
         end
-        return data.comment
+        return comment
     end,
 }
 
--- Group.luaで統合されたパラメータをまとめる
-local function MergeIniValue(data)
+-- Group.luaで統合されたパラメータをまとめたり、
+-- URLのような特殊な行を加工したりする
+--[[
+
+    ---- input ----
+    {
+        sortlist_front = ...,
+        sortlist_rear = ...,
+        ...
+    }
+    ---- output ----
+    {
+        sortlist = {
+            {Front = -1, Default = 0, Rear = 1, Hidden = 0,},
+            Front = ...,
+            Rear = ...,
+        }
+        ...
+    }
+--]]
+local function ConvertIniValue(data)
     if not data then
         return {}
     end
-    for k,v in pairs(spKeyList) do
-        -- dataからspKeyListのリストのみ取得
-        local checkData = {}
-        local checkDefine = {}
+    -- dataからspKeyListで定義されたリストのみ処理対象
+    for spKeyListKey, spKeyValue in pairs(spKeyList) do
+        local defineValues = {}
+        local dataValues = {}
         -- Group.ini内で定義されているキー分ループ
         for dataKey, dataValue in pairs(data) do
-            local lowDataKey = string.lower(dataKey)
+            local lowerDataKey = string.lower(dataKey)
             -- 特殊処理キー一覧に存在するキーかどうか
-            if _FindValue_(v, lowDataKey) then
-                checkData[lowDataKey] = {}
-                -- テーブルデータの場合、[1]に定義したキー名の配列が存在する
+            if _FindValue_(spKeyValue, lowerDataKey) then
+                defineValues[lowerDataKey] = {}
+                dataValues[lowerDataKey] = {Default = {}}
                 if type(dataValue) == 'table' then
-                    for vKey,vValue in pairs(dataValue) do
-                        if vKey ~= 1 then
-                            checkData[lowDataKey][vKey] = vValue
+                    -- dataValue[1]はキー名の定義
+                    defineValues[lowerDataKey] = dataValue[1]
+                    -- dataValue[1]以外の情報を取得
+                    for k, v in pairs(dataValue) do
+                        if k ~= 1 then
+                            dataValues[lowerDataKey][k] = v
                         end
                     end
-                    -- [1] はキー名の定義
-                    checkDefine[lowDataKey] = dataValue[1]
                 else
                     -- 文字列データの場合そのまま取得
-                    checkData[lowDataKey] = dataValue
-                    checkDefine[lowDataKey] = {}
+                    defineValues[lowerDataKey] = {Default = dataValue}
                 end
-                -- 変換項目のデータは削除
-                data[lowDataKey] = nil
+                -- 変換前のデータは削除
+                data[lowerDataKey] = nil
             end
         end
-        -- 一つ以上データが存在していれば取得したデータを加工
-        -- 加工処理はfunctionListテーブルを参照
-        for tmpK,tmpV in pairs(checkDefine) do
-            if functionList[k] then
-                data[string.lower(k)] = functionList[k](checkDefine, checkData)
-            else
-                data[string.lower(k)] = nil
-            end
-           break
-        end
+        -- functionListテーブルのルールに沿ってデータを加工
+        --[[
+            例: Commentの場合
+            ---- input ----
+            'TEST:te|st|data'
+            ---- values ----
+            defineValues = {
+                comment = {
+                    'Default' = 'TEST',
+                    'Group1' = 'te',
+                },
+            }
+            dataValues = {
+                comment = {
+                    'Default' = {},
+                    'Group1' = {'st', 'data'},
+                },
+            }
+            ---- output ----
+            'TEST:te\nst\ndata'
+        --]]
+        -- NOTE: 現在はCommentでしかdataValuesを使用していないが、将来的にEXFolderを実装するときに使用予定
+        data[string.lower(spKeyListKey)] = functionList[spKeyListKey](defineValues, dataValues)
     end
 
     return data
 end
 
 -- 値を解析する
+--[[
+    
+    [example1]
+    ---- input ----
+    'ExampleValue'
+    ---- output ----
+    return 'ExampleValue'
+    
+    [example2]
+    ---- input ----
+    'FirstValue:SecondValue|SongA|SongB:ThirdValue|SongC'
+    ---- output ----
+    return {
+        {
+            Default = 'FirstValue',
+            Group1 = 'SecondValue',
+            Group2 = 'ThirdValue',
+        }
+        Group1 = {'SongA', 'SongB'},
+        Group2 = {'SongC'},
+    }
+--]]
 local function SetIniValue(value)
     local keyList = {}
     local data = {}
     local values = split(':', value)
-    for i=1, #values do
+    for i = 1, #values do
         if values[i] ~= '' then -- 終端を「;」ではなく「:」にしてる場合の対策
-            local keyName = (i==1) and 'Default' or 'Group'..(i-1)
+            local keyName = (i == 1) and 'Default' or 'Group' .. (i - 1)
             local sub = split('|', values[i])
             if #sub >= 2 then
                 data[keyName] = {}
                 -- | 区切りがある場合
-                for j=2, #sub do
-                    data[keyName][#data[keyName]+1] = sub[j]
+                for j = 2, #sub do
+                    data[keyName][#data[keyName] + 1] = sub[j]
                 end
-            else
-                data[keyName] = ''
             end
             keyList[keyName] = sub[1]
         end
@@ -164,7 +252,7 @@ return {
         local values = ''
         while not f:AtEOF() do
             -- BOMを除去して取得
-            local fLine = string.gsub(f:GetLine(), '^'..string.char(0xef, 0xbb, 0xbf)..'(#.+)', '%1')
+            local fLine = string.gsub(f:GetLine(), '^' .. string.char(0xef, 0xbb, 0xbf) .. '(#.+)', '%1')
             if string.sub(string.lower(fLine), 1, 5) == '#url:' then
                 -- URL行は//を含むので特殊処理
                 fLine = string.gsub(fLine, '#([^:]+):([^;]+);.*', '#%1:%2;')
@@ -173,7 +261,7 @@ return {
                 fLine = split('//', fLine)[1]
             end
             -- パラメータを取得
-            local match,_,key,value = string.find(fLine, '[^/]*#([^:]+):?([^:]?[^;]*)')
+            local match, _, key, value = string.find(fLine, '[^/]*#([^:]+):?([^:]?[^;]*)')
             -- 最初または次のパラメータ（#AAA:の行）
             if match then
                 -- 現在のパラメータを読み取り中の場合
@@ -187,16 +275,21 @@ return {
                 values  = split(';', value)[1]
             else
                 -- 現在のパラメータが2行以上ある場合
-                values  = values..split(';', fLine)[1]
+                values = values .. split(';', fLine)[1]
             end
         end
         f:Close()
         f:destroy()
         -- 最後のパラメータが読み取り途中の場合は内容を確定する
         if current then
+            --[[
+                #TEST:Data;
+                  ↓
+                data['test'] = 'Data'
+            --]]
             data[current] = SetIniValue(values)
         end
-        return MergeIniValue(data)
+        return ConvertIniValue(data)
     end,
 }
 

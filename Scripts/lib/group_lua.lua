@@ -1,4 +1,4 @@
---[[ Group_Lua v20220223]]
+--[[ Group_Lua v20230308]]
 
 -- このファイルの絶対パス
 local absolutePath = string.gsub(string.sub(debug.getinfo(1).source, 2), '(.+/)[^/]+', '%1')
@@ -463,17 +463,76 @@ local function GetLyricType(self, song)
     return CopyTable(data[1]), CopyTable(data[2])
 end
 
+-- 1文字目が英数字以外の場合、ソートで後ろに行くように先頭にstring.char(126)をつける
+local function AdjustSortText(text)
+    return string.gsub(string.gsub(text, '^%.', ''), '^([^%w])', string.char(126)..'%1')
+end
+
+-- グループ単位のソートした情報を取得
+-- p1:グループフォルダ名
+-- return:ソート後のテーブル[Dir, Sort, Name]
+local function GetGroupSort(self, groupName)
+    local sortDataOrg = GetRaw(self, groupName, 'SortList') or {}
+    local sortList = {
+        default = 0,
+        front   = -1,
+        rear    = 1,
+        hidden  = 0,
+    }
+    local sortOrder = {}
+    -- ソート優先度を定義しているか取得
+    for k,v in pairs(sortDataOrg[1] or {}) do
+        sortList[string.lower(k)] = tonumber(v)
+    end
+    -- キーを小文字で持つ（group.luaの方で大文字小文字を区別させない）
+    local sortData = {}
+    for k,v in pairs(sortDataOrg) do
+        if k ~= 1 then
+            sortData[string.lower(k)] = v
+        end
+    end
+    sortDataOrg = nil
+    -- ソート順序を設定
+    for k,_ in pairs(sortList) do
+        if k ~= 'default' then  -- デフォルトは無視
+            for i, dir in pairs(sortData[k] or {}) do
+                local folder = (type(dir) == 'table') and dir[1] or dir
+                sortOrder[string.lower(folder)] = (k ~= 'hidden') and i + 100000 * sortList[k] or 0
+            end
+        end
+    end
+    -- ソート用のテーブル作成
+    local dirList = {}
+    for _, song in pairs(SONGMAN:GetSongsInGroup(groupName)) do
+        local dir = song:GetSongDir()
+        -- 楽曲フォルダ名（小文字）を取得
+        local key = string.lower(string.gsub(dir, '/[^/]*Songs/[^/]+/([^/]+)/', '%1'))
+        if sortOrder[key] ~= 0 then    -- 0 = Hidden（※Default = nil）
+            dirList[#dirList+1] = {
+                Dir  = string.gsub(dir, '/[^/]*Songs/(.+)', '%1'),
+                Song = song,
+                Sort = sortOrder[key] or 0,
+                Name = string.lower(AdjustSortText(song:GetTranslitMainTitle()..'  '..song:GetTranslitSubTitle())),
+            }
+        end
+    end
+    table.sort(dirList, function(a, b)
+                            if a.Sort ~= b.Sort then
+                                return a.Sort < b.Sort
+                            else
+                                return a.Name < b.Name
+                            end
+                        end)
+    return dirList
+end
+
 -- ソートファイルを作成
 -- p1:ソートファイル名（Group）
--- p2:グループをNameで指定したテキストでソート（true）
+-- p2:グループをGroup.luaのNameで指定したテキストでソート（true）
 local function CreateSortText(self, ...)
     local sortName, groupNameSort = ...
     sortName = sortName or 'Group'
     groupNameSort = (groupNameSort == nil) and true or groupNameSort
-    -- 1文字目が英数字以外の場合、ソートで後ろに行くように先頭にstring.char(126)をつける
-    local Adjust = function(text)
-        return string.gsub(string.gsub(text, '^%.', ''), '^([^%w])', string.char(126)..'%1')
-    end
     local f = RageFileUtil.CreateRageFile()
     if not f:Open(THEME:GetCurrentThemeDirectory()..'Other/SongManager '..sortName..'.txt', 2) then
         f:destroy()
@@ -484,67 +543,18 @@ local function CreateSortText(self, ...)
     for _, groupName in pairs(SONGMAN:GetSongGroupNames()) do
         groupList[#groupList+1] = {
             Original = groupName,
-            Sort     = string.lower(groupNameSort and Adjust(GetGroupName(self, groupName)) or groupName),
+            Sort     = string.lower(groupNameSort and AdjustSortText(GetGroupName(self, groupName)) or groupName),
         }
     end
     table.sort(groupList, function(a, b)
                 return a.Sort < b.Sort
             end)
     for g = 1, #groupList do
+
         local groupName = groupList[g].Original
-        local sortDataOrg = GetRaw(self, groupName, 'SortList') or {}
-        local sortList = {
-            default = 0,
-            front   = -1,
-            rear    = 1,
-            hidden  = 0,
-        }
-        local sortOrder = {}
-        -- ソート優先度を定義しているか取得
-        for k,v in pairs(sortDataOrg[1] or {}) do
-            sortList[string.lower(k)] = tonumber(v)
-        end
-        -- キーを小文字で持つ（group.luaの方で大文字小文字を区別させない）
-        local sortData = {}
-        for k,v in pairs(sortDataOrg) do
-            if k ~= 1 then
-                sortData[string.lower(k)] = v
-            end
-        end
-        sortDataOrg = nil
-        -- ソート順序を設定
-        for k,_ in pairs(sortList) do
-            if k ~= 'default' then  -- デフォルトは無視
-                for i, dir in pairs(sortData[k] or {}) do
-                    local folder = (type(dir) == 'table') and dir[1] or dir
-                    sortOrder[string.lower(folder)] = (k ~= 'hidden') and i + 100000 * sortList[k] or 0
-                end
-            end
-        end
-        -- ソート用のテーブル作成
-        local dirList = {}
-        local dirCount = 0
-        for _, song in pairs(SONGMAN:GetSongsInGroup(groupName)) do
-            local dir = song:GetSongDir()
-            -- 楽曲フォルダ名（小文字）を取得
-            local key = string.lower(string.gsub(dir, '/[^/]*Songs/[^/]+/([^/]+)/', '%1'))
-            if sortOrder[key] ~= 0 then    -- 0 = Hidden（※Default = nil）
-                dirCount = dirCount + 1
-                dirList[#dirList+1] = {
-                    Dir  = string.gsub(dir, '/[^/]*Songs/(.+)', '%1'),
-                    Sort = sortOrder[key] or 0,
-                    Name = string.lower(Adjust(song:GetTranslitMainTitle()..'  '..song:GetTranslitSubTitle())),
-                }
-            end
-        end
-        if dirCount > 0 then
-            table.sort(dirList, function(a, b)
-                                    if a.Sort ~= b.Sort then
-                                        return a.Sort < b.Sort
-                                    else
-                                        return a.Name < b.Name
-                                    end
-                                end)
+        local dirList = GetGroupSort(self, groupName)
+
+        if #dirList > 0 then
             f:PutLine("---"..groupName)
             for _,dir in pairs(dirList) do
                 f:PutLine(dir.Dir)
@@ -649,6 +659,7 @@ return {
     MeterType    = GetMeterType,
     LyricType    = GetLyricType,
     Custom       = GetCustomValue,
+    GroupSort    = GetGroupSort,
     Sort         = CreateSortText,
     AddKey       = AddTargetKey,
     Fallback     = GetFallback,
