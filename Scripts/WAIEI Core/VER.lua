@@ -1,7 +1,7 @@
 -- バージョン
 local main = 0
-local ver = 51
-local date = '20220915'
+local ver = 52
+local date = '20221127'
 
 --- WAIEI Coreのバージョンを取得
 --[[
@@ -24,16 +24,19 @@ local function SetSMVersion(self)
     local n=string.lower(ProductFamily())
     local v=string.lower(ProductVersion())
     if n == 'stepmania' then
-        if string.find(v, '5.3', 0, true) then
+        if string.find(v, '5.3.', 0, true) then
         -- 5.3.x
             __SMV__= 5300
-        elseif string.find(v, '5.2', 0, true) then
+        elseif string.find(v, '5.2.', 0, true) then
         -- 5.2.x
             __SMV__= 5200
         elseif string.find(v, '5.1.-', 0, true) then
         -- 5.1.-x
             __SMV__= 5190
-        elseif string.find(v, '5.1', 0, true) then
+        elseif string.find(v, '5.1-git', 0, true) then
+        -- 5.1 NightlyBuilds
+            __SMV__= 5110
+        elseif string.find(v, '5.1.', 0, true) then
         -- 5.1.x
             __SMV__= 5100
         elseif string.find(v, '5.0.7rc', 0, true) then
@@ -53,12 +56,18 @@ local function SetSMVersion(self)
             __SMV__= 0
         end
     elseif n == 'outfox' then
-        if string.find(v, '0.4', 0, true) then
-        -- 5.3.x
+        if string.find(v, '0.5', 0, true) then
+        -- Alpha V
+            __SMV__= 530500
+        elseif string.find(v, '0.4', 0, true) then
+        -- Alpha 0.4.x
             __SMV__= 530400
         else
             __SMV__= 5300
         end
+    elseif n == 'itgmania' then
+        -- ITGMania
+        __SMV__= 5101
     else
         __SMV__= 0
     end

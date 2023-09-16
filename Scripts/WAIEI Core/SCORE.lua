@@ -127,6 +127,7 @@ end
     @return ActorFrame
 --]]
 local songMaximumScore = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
+local useScoreChangedMes = {PlayerNumber_P1 = false, PlayerNumber_P2 = false}
 local function scoreActor(...)
     local self, newScoreType = ...
     scoreType = string.lower(newScoreType or defaultScoreType)
@@ -170,22 +171,35 @@ local function scoreActor(...)
                     return
                 end
                 -- OutFoxはこの方法では正しく動かない
-				if YA_VER:Version() < 5300 and params.TapNoteScore and
-				   params.TapNoteScore ~= 'TapNoteScore_AvoidMine' and
-				   params.TapNoteScore ~= 'TapNoteScore_HitMine' and
-				   params.TapNoteScore ~= 'TapNoteScore_CheckpointMiss' and
-				   params.TapNoteScore ~= 'TapNoteScore_CheckpointHit' and
-				   params.TapNoteScore ~= 'TapNoteScore_None'
-				then
+                if params.TapNoteScore and
+                   params.TapNoteScore ~= 'TapNoteScore_AvoidMine' and
+                   params.TapNoteScore ~= 'TapNoteScore_HitMine' and
+                   params.TapNoteScore ~= 'TapNoteScore_CheckpointMiss' and
+                   params.TapNoteScore ~= 'TapNoteScore_CheckpointHit' and
+                   params.TapNoteScore ~= 'TapNoteScore_None' and
+                   (not params.HoldNoteScore or
+                    params.HoldNoteScore ~= 'HoldNoteScore_LetGo' and
+                    params.HoldNoteScore ~= 'HoldNoteScore_MissedHold')
+                then
                     local sendParams = params
                     sendParams.PlayerNumber = params.Player
-                    self:playcommand('UpdateScore', sendParams)
-				end
+                    if YA_VER:Version() < 5300 then
+                        self:playcommand('UpdateScore', sendParams)
+                    else
+                        -- OF用特殊処理（ホールド以外はこっちでスコア計算する）
+                        if not params.HoldNoteScore then
+                            useScoreChangedMes[params.Player] = false
+                            self:playcommand('UpdateScore', sendParams)
+                        else
+                            useScoreChangedMes[params.Player] = true
+                        end
+                    end
+                end
             end,
             -- OutFox用。ネット対戦でうまく動かないがOutFoxはそもそもネット対戦非対応
             -- A4.13時点ではAutoPlay CPUもW1～Miss判定時にメッセージが飛ばない
             ScoreChangedMessageCommand = function (self, params)
-				if YA_VER:Version() >= 5300 then
+                if YA_VER:Version() >= 5300 and useScoreChangedMes[params.PlayerNumber] then
                     self:playcommand('UpdateScore', params)
                 end
             end,
@@ -220,14 +234,14 @@ end
 
 --- スコアタイプを取得
 --[[
-	@return string
+    @return string
 --]]
 local function getScoreType(self)
     return scoreType or 'Default'
 end
 --- 表示用スコアタイプを取得
 --[[
-	@return string
+    @return string
 --]]
 local function getDisplayScoreType(self)
     return displayScoreTypeList[string.lower(getScoreType(self))] or 'Default'
@@ -236,7 +250,7 @@ end
 --- Metrics.iniのUseInternalScoring用の値を取得
 --[[
     現在はコースモードがtrue、通常時はfalse
-	@return bool
+    @return bool
 --]]
 local function getUseInternalScoring(self)
     return GAMESTATE:IsCourseMode()

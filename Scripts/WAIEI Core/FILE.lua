@@ -18,9 +18,9 @@ local function OpenFile(self, ...)
         end
     end
 
-	--- 内容をすべて取得して解放
+    --- 内容をすべて取得して解放
     --[[
-		@return string
+        @return string
     --]]
     local function ReadFile(self)
         if not file then
@@ -31,15 +31,15 @@ local function OpenFile(self, ...)
         return data
     end
 
-	--- ファイルの返却
+    --- ファイルの返却
     --[[
-		@return File
+        @return File
     --]]
     local function GetFilePointer(self)
         return file or nil
     end
 
-	--- パラメータを取得
+    --- パラメータを取得
     --[[
         #Hoge:この部分を取得;
         @param  string パラメータ

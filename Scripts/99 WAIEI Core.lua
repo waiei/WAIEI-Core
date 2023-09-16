@@ -10,22 +10,32 @@ end
 
 -- DebugLogsにログを出力
 function _LOG(...)
-    local text, overwrite = ...
+    local text, overwrite, prefix = ...
     overwrite = overwrite or false
-    local name = THEME:GetCurrentThemeDirectory()..'./DebugLogs/'..Year()..'-'..string.format('%02d', MonthOfYear()+1)..'-'..string.format('%02d', DayOfMonth())..'.log'
+    local name = string.format('%s%04d-%02d-%02d.log',
+        prefix and prefix..'-' or '',
+        Year(), MonthOfYear()+1, DayOfMonth()
+    )
+    local path = THEME:GetCurrentThemeDirectory()..'./DebugLogs/'..name
     local data = ''
-    if not overwrite and FILEMAN:DoesFileExist(name) then
+    if not overwrite and FILEMAN:DoesFileExist(path) then
         local file = RageFileUtil:CreateRageFile()
-        file:Open(name, 1)
+        file:Open(path, 1)
         data = file:Read()
         file:Close()
         file:destroy()
     end
     local file = RageFileUtil:CreateRageFile()
-    file:Open(name, 2)
+    file:Open(path, 2)
     file:Write(data .. text .. '\n')
     file:Close()
     file:destroy()
+end
+
+-- テーブルを展開してログ出力
+function _LOG2(value, ...)
+    local overwrite, prefix = ...
+    _LOG(Serialize(value), overwrite, prefix)
 end
 
 -- ライブラリ関連

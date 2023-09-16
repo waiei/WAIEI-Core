@@ -81,7 +81,7 @@ end
 --- バイナリを含む文字列を %00x 表記に変換する
 --[[
     @param  string 対象の文字列
-	@return string
+    @return string
 --]]
 local function CreateUrl(str)
     local strUrl = ''
@@ -94,9 +94,9 @@ end;
 
 --- エラーチェックと値の取得
 --[[
-	@param  Player プレイヤー
-	@param  table{year,month,day,hour,minute} プレイ日時が格納されたテーブル
-	@return table
+    @param  Player プレイヤー
+    @param  table{year,month,day,hour,minute} プレイ日時が格納されたテーブル
+    @return table
 --]]
 local function ValidateAndGetValues(player, datetimeTable)
     local playerName = PROFILEMAN:GetPlayerName(player);
@@ -283,8 +283,8 @@ end
 
 --- QRコード対応版のURLクエリに変更する
 --[[
-	@param  table
-	@return string
+    @param  table
+    @return string
 --]]
 local function ConvertQueryVersion2(data)
     local b64 = YA_LIB.BASE64
@@ -334,9 +334,9 @@ end
 
 --- リザルト連携用URLを生成
 --[[
-	@param  Player プレイヤー
-	@param  table{year,month,day,hour,minute} プレイ日時が格納されたテーブル
-	@return table
+    @param  Player プレイヤー
+    @param  table{year,month,day,hour,minute} プレイ日時が格納されたテーブル
+    @return table
 --]]
 local function GenerateUrl(self, player, datetimeTable)
     if not datetimeTable then
@@ -357,8 +357,8 @@ end
 
 --- エラーメッセージを設定
 --[[
-	@param  table{Profile,Song,Course}
-	@return table
+    @param  table{Profile,Song,Course}
+    @return table
 --]]
 local function SetErrorMessage(self, messages)
     errorMessages.Profile = messages.Profile or errorMessages.Profile
@@ -369,8 +369,8 @@ end
 
 --- 値取得用の関数を設定
 --[[
-	@param  table{RadarValue,Judgment,HighScore,Meter,ScoreType,ThemeColor,Ultimate}
-	@return table
+    @param  table{RadarValue,Judgment,HighScore,Meter,ScoreType,ThemeColor,Ultimate}
+    @return table
 --]]
 local function SetFunctions(self, newFunctions)
     functions.RadarValue = newFunctions.RadarValue or functions.RadarValue
@@ -385,7 +385,7 @@ end
 
 --- リザルト連携用URLへアクセス
 --[[
-	@param string query
+    @param string query
 --]]
 local function ShareResult(self, ...)
     local query = ...
@@ -398,7 +398,7 @@ end
 --[[
     @param  bool リザルト共有機能の有効フラグ（未指定の場合も有効）
     @param  table Metricsで定義したCode（{Share={string}, Share2={string}}）
-	@return Actor
+    @return Actor
 --]]
 local shareUrl = {}
 local function ShareActor(self, ...)

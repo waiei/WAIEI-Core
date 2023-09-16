@@ -7,6 +7,7 @@ local defaultSpeedList = {
     m  = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 700, 800, 900, 1000,},
     a  = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 700, 800, 900, 1000,},
     ca = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 700, 800, 900, 1000,},
+    av = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 700, 800, 900, 1000,},
 }
 local defaultCodes = {
     SpeedUp        = {'SpeedUp', 'SpeedUp2'},
@@ -22,7 +23,7 @@ local currentSpeed = {PlayerNumber_P1 = 0, PlayerNumber_P2 = 0}
 --[[
     @param  string  検索文字
     @param  table 検索対象のテーブル
-	@return bool
+    @return bool
 --]]
 local function inTable(search, tableData)
     for value in ivalues(tableData) do
@@ -114,6 +115,11 @@ local function LoadSpeedList(self, pn)
                 Mod   = 'ca',
                 Speed = tonumber(split('ca', strSpeeds[i])[2]),
             }
+        elseif mod == 'av' and string.find(strSpeeds[i], 'av[%d.]+') then
+            speedList[pn][i] = {
+                Mod   = 'av',
+                Speed = tonumber(split('av', strSpeeds[i])[2]),
+            }
         end
     end
     -- 該当するスピードが一覧に存在しない場合、デフォルト値を設定
@@ -181,6 +187,13 @@ local function SetCurrentSpeed(self, pn, mod, speed)
             posn:AMod(speed)
             pocu:AMod(speed)
             return {Mod = 'a', Speed = speed}
+        elseif mod == 'av' and popr.AVMod then
+            -- aMod
+            popr:AVMod(speed)
+            posn:AVMod(speed)
+            posn:AVMod(speed)
+            pocu:AVMod(speed)
+            return {Mod = 'av', Speed = speed}
         end
     end
     -- 1.0x
@@ -316,7 +329,7 @@ end
     @param  bool ハイスピード変更の有効フラグ（未指定の場合も有効）
     @param  bool スクロール方向変更の有効フラグ（未指定の場合も有効）
     @param  table Metricsで定義したCode（{SpeedUp={string}, SpeedDown={string}, ScrollStandard={string}, ScrollReverse={string},}）
-	@return Actor
+    @return Actor
 --]]
 local actorSpeedParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}
 local actorReverseParams = {PlayerNumber_P1 = {}, PlayerNumber_P2 = {}}

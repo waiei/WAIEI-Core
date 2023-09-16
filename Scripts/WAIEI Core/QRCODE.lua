@@ -5,7 +5,7 @@
     @param  string テキスト
     @param  int 全体のサイズ(px)
     @param  int 枠の太さ(px)
-	@return ActorFrame
+    @return ActorFrame
 --]]
 local qrColors = {}
 local defaultQrColors = {color('1, 1, 1, 1'), color('0, 0, 0, 1')}
