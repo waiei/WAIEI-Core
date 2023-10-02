@@ -271,13 +271,18 @@ end
 -- グループ名を取得
 -- p1:グループ名
 local function GetGroupName(self, groupName)
-    return groupParams.Name[groupName] or SONGMAN:ShortenGroupName(groupName)
+    return (groupName and groupName ~= '')
+        and groupParams.Name[groupName]
+        or SONGMAN:ShortenGroupName(groupName)
 end
 
 -- グループカラーを取得
 -- p1:グループ名
 local function GetGroupColor(self, groupName)
-    return groupParams.GroupColor[groupName] or default.GroupColor or SONGMAN:GetSongGroupColor(groupName)
+    return (groupName and groupName ~= '')
+        and groupParams.GroupColor[groupName]
+        or default.GroupColor
+        or SONGMAN:GetSongGroupColor(groupName)
 end
 
 -- URLを取得

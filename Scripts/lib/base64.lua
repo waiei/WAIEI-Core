@@ -122,23 +122,23 @@ end
 
 --(A.C)Add url encode/decode
 local function to_base64_url(self, to_encode)
-	local encode = to_base64(to_encode)
-	encode = string.gsub(encode, '=', '')
-	encode = string.gsub(encode, '+', '-')
-	encode = string.gsub(encode, '/', '_')
-	return encode
+    local encode = to_base64(to_encode)
+    encode = string.gsub(encode, '=', '')
+    encode = string.gsub(encode, '+', '-')
+    encode = string.gsub(encode, '/', '_')
+    return encode
 end
 
 local function from_base64_url(self, to_decode)
-	decode = string.gsub(to_decode, '-', '+')
-	decode = string.gsub(decode, '_', '/')
-	if string.len(to_decode) % 4 > 0 then
-		decode = decode..(string.rep('=', 4 - (string.len(to_decode) % 4)))
-	end
-	return from_base64(decode)
+    local decode = string.gsub(to_decode, '-', '+')
+    decode = string.gsub(decode, '_', '/')
+    if string.len(to_decode) % 4 > 0 then
+        decode = decode..(string.rep('=', 4 - (string.len(to_decode) % 4)))
+    end
+    return from_base64(decode)
 end
 
 return {
-	ToBase64   = to_base64_url,
-	FromBase64 = from_base64_url,
+    ToBase64   = to_base64_url,
+    FromBase64 = from_base64_url,
 }
