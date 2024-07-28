@@ -30,12 +30,15 @@ end
 -- 外部呼出し不可
 -- p1:グループ名
 -- p2:ファイル名
-local function SearchFile(groupName, fileName)
+-- p3:前方一致検索
+local function SearchFile(groupName, searchFileName, ...)
+    local leftMatch = ...
     for i=1, #songPathList do
-        local dirList = FILEMAN:GetDirListing(songPathList[i]..groupName)
+        local dirList = FILEMAN:GetDirListing(songPathList[i]..groupName..'/')
         for d=1, #dirList do
-            if string.lower(dirList[d]) == string.lower(fileName) then
-                return songPathList[i]..groupName..dirList[d]
+            local lSearch, lFilename = string.lower(searchFileName), string.lower(dirList[d])
+            if (not leftMatch and lSearch == lFilename) or string.find(lFilename, lSearch, 1, true) then
+                return songPathList[i]..groupName..'/'..dirList[d]
             end
         end
     end
@@ -173,7 +176,7 @@ end
 -- p2:取得するキー
 local function GetDefine(self, groupName, key)
     local define = {}
-    for k,v in pairs(defaultDefine[key]) do
+    for k,v in pairs(defaultDefine[key] or {}) do
         define[string.lower(k)] = v
     end
     local raw = GetRaw(self, groupName, key)
@@ -283,15 +286,15 @@ local function Scan(self, ...)
     -- グループ名の指定がない場合は全グループを検索
     if not groupName then
         local groups = SONGMAN and SONGMAN:GetSongGroupNames() or {}    -- 5.0.7RC対策
-        for i, group in pairs(groups) do
+        for _, group in pairs(groups) do
             Scan(self, group)
         end
         return
     end
 
     -- 読みこんでRawに保存
-    local groupLuaPath = SearchFile(groupName..'/', 'group.lua')
-    local groupIniPath = (not groupLuaPath) and SearchFile(groupName..'/', 'group.ini') or nil
+    local groupLuaPath = SearchFile(groupName, 'group.lua')
+    local groupIniPath = (not groupLuaPath) and SearchFile(groupName, 'group.ini') or nil
     SetRaw(groupName, groupLuaPath, groupIniPath)
 
     -- 情報を取得
@@ -568,10 +571,10 @@ end
 
 -- 楽曲の表示条件を満たしているかチェック
 -- p1:songまたは楽曲フォルダのパス（グループフォルダ名/楽曲フォルダ名/）
--- 取得対象の定義名
-local function IsFolderSongEnabled(self, songOrPath, define)
+-- p2:取得対象の定義名（Folderの識別子）
+local function IsFolderSongEnabled(self, songOrPath, defineName)
     local path = (type(songOrPath) ~= 'string') and GetSongLowerDir(songOrPath) or string.lower(songOrPath)
-    local songData = groupData.Folder[path] and groupData.Folder[path][define] or nil
+    local songData = groupData.Folder[path] and groupData.Folder[path][defineName] or nil
     -- 楽曲がdefineのリストに存在しない
     if not songData then
         return false
@@ -580,51 +583,47 @@ local function IsFolderSongEnabled(self, songOrPath, define)
     if not songData[2] or songData[2].condition == nil then
         return true
     end
-    -- 条件をチェック
+    -- 条件をチェック（関数）
     if type(songData[2].condition) == 'function' then
         return songData[2].condition()
     end
+    -- 条件をチェック（真偽値）
     return (songData[2].condition ~= false)
 end
 
--- フォルダを取得
+-- フォルダ一覧を取得
 -- p1:グループ名
--- p2:楽曲表示条件を満たしているフォルダのみ
+-- p2:楽曲表示条件を満たしているフォルダのみ（デフォルトtrue）
 local function GetFolderList(self, groupName, ...)
     local activeOnly = ...
     activeOnly = (activeOnly == nil or activeOnly ~= false)
     local folderList = {}
     local data = GetRaw(nil, groupName, 'Folder')
     for k,v in pairs(data and data[1] or {}) do
-        if activeOnly then
-            -- 表示対象が存在するフォルダのみ取得
-            if v.condition == nil then
-                local cond = false
-                if type(v.condition) == 'function' then
-                    cond = v.condition()
-                else
-                    cond = (v.condition ~= false)
-                end
-                if cond then
-                    -- フォルダ自体の表示条件を満たす
-                    local show = {}
-                    for _,vFolder in pairs(data[k]) do
-                        local folder = (type(vFolder) == 'table') and vFolder[1] or vFolder
-                        if type(folder) == 'string' and IsFolderSongEnabled(self, groupName..'/'..folder..'/', k) then
-                            show[#show+1] = folder
-                        end
-                    end
-                    if #show > 0 then
-                        folderList[k] = show
-                    end
-                end
-            end
+        local condition = false
+        -- activeOnlyがfalseの場合は強制的に表示条件true
+        if not activeOnly then
+            condition = true
         else
+            if type(v.condition) == 'function' then
+                condition = v.condition()
+            else
+                -- false以外（未指定かtrue）なら表示条件true
+                condition = (v.condition ~= false)
+            end
+        end
+        if condition then
             -- 全フォルダ取得
             local show = {}
-            for _,vFolder in pairs(data[k]) do
+            -- vFolderは楽曲フォルダ名か{フォルダ名, params}の配列
+            for _,vFolder in pairs(data and data[k] or {}) do
                 local folder = (type(vFolder) == 'table') and vFolder[1] or vFolder
-                show[#show+1] = folder
+                if type(folder) == 'string' then
+                    -- 全フォルダ取得モードか楽曲表示条件を満たしている場合楽曲フォルダ名を一覧に追加
+                    if not activeOnly or IsFolderSongEnabled(self, groupName..'/'..folder..'/', k) then
+                        show[#show+1] = folder
+                    end
+                end
             end
             if #show > 0 then
                 folderList[k] = show
@@ -634,6 +633,38 @@ local function GetFolderList(self, groupName, ...)
     return folderList
 end
 
+-- フォルダの詳細を取得
+-- p1:グループ名
+-- p2:Folderの識別子
+local function GetFolder(self, groupName, defineName)
+    local raw = GetRaw(nil, groupName, 'Folder')
+    local folder = raw and raw[1] and raw[1][defineName] or {}
+    local jacket = SearchFile(groupName, 'jacket', true)
+    local condition
+    -- EXFolderの場合は明示的に条件指定しなくても判定する
+    if defineName == 'EXFolder1' or defineName == 'EXFolder2' then
+        condition = EXFCondition(defineName)
+    else
+        -- 定義が存在していればtrue
+        condition = (raw and raw[1] and raw[1][defineName]) and true or false
+    end
+    -- 三項演算だとand falseのときにorが実行されるのでここで判定、ただし既にfalseの場合は不要
+    if folder.Condition and condition then
+        if type(folder.Condition) == 'function' then
+            condition = folder.Condition()
+        else
+            condition = folder.Condition
+        end
+    end
+    local bannerPath = SONGMAN:GetSongGroupBannerPath(groupName)
+    return {
+        Defined = (raw and raw[1] and raw[1][defineName]) and true or false,
+        Name = folder.Name or defineName,
+        Jacket = folder.Jacket or (jacket or bannerPath),
+        Banner = folder.Banner or bannerPath,
+        Condition = condition,
+    }
+end
 
 
 -- 初期化
@@ -646,6 +677,10 @@ AddTargetKey(nil, 'MeterType',    'string', {Default = 'DDR', DDR = 'DDR', DDRX 
 AddTargetKey(nil, 'MenuColor',    'color')
 AddTargetKey(nil, 'LyricType',    'mixed', {Default = 'Default'})
 AddTargetKey(nil, 'Folder',       'mixed')
+
+EXFCondition = function(value)
+    return true
+end
 
 return {
     Scan         = Scan,
@@ -666,6 +701,7 @@ return {
     Define       = GetDefine,
     FolderSong   = IsFolderSongEnabled,
     FolderList   = GetFolderList,
+    Folder       = GetFolder,
 }
 
 --[[

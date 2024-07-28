@@ -73,7 +73,7 @@ YA_QRCODE  = dofile(coreDir..'QRCODE.lua')
 -- ライフ関連
 YA_LIFE  = dofile(coreDir..'LIFE.lua')
 
----- 初期化
+---- Group.lua追加項目のデフォルト定義
 -- レセプターの位置
 YA_LIB.GROUP:AddKey('ReceptorPosition', 'mixed', {
     Default       = 'Default',
@@ -84,6 +84,8 @@ YA_LIB.GROUP:AddKey('ReceptorPosition', 'mixed', {
     cyberiastyle  = 'cyberiastyle',
     waiei         = 'waiei',
 })
+-- ステージ
+YA_LIB.GROUP:AddKey('Stage', 'mixed', {Off = 'Off'})
 
 --[[
 MIT License

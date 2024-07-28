@@ -169,7 +169,7 @@ local function SetCurrentSpeed(self, pn, mod, speed)
         -- mMod
         popr:MMod(speed)
         posn:MMod(speed)
-        posn:MMod(speed)
+        post:MMod(speed)
         pocu:MMod(speed)
         return {Mod = 'm', Speed = speed}
     elseif YA_VER:Version() >= 5300 then
@@ -177,21 +177,21 @@ local function SetCurrentSpeed(self, pn, mod, speed)
             -- caMod
             popr:CAMod(speed)
             posn:CAMod(speed)
-            posn:CAMod(speed)
+            post:CAMod(speed)
             pocu:CAMod(speed)
             return {Mod = 'ca', Speed = speed}
         elseif mod == 'a' then
             -- aMod
             popr:AMod(speed)
             posn:AMod(speed)
-            posn:AMod(speed)
+            post:AMod(speed)
             pocu:AMod(speed)
             return {Mod = 'a', Speed = speed}
         elseif mod == 'av' and popr.AVMod then
-            -- aMod
+            -- avMod
             popr:AVMod(speed)
             posn:AVMod(speed)
-            posn:AVMod(speed)
+            post:AVMod(speed)
             pocu:AVMod(speed)
             return {Mod = 'av', Speed = speed}
         end
@@ -199,7 +199,7 @@ local function SetCurrentSpeed(self, pn, mod, speed)
     -- 1.0x
     popr:XMod(1.0)
     posn:XMod(1.0)
-    posn:XMod(1.0)
+    post:XMod(1.0)
     pocu:XMod(1.0)
     return {Mod = 'x', speed = 1}
 end
