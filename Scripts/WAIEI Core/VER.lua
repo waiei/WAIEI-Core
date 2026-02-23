@@ -1,7 +1,7 @@
 -- バージョン
 local main = 0
-local ver = 52
-local date = '20221127'
+local ver = 53
+local date = '20260222'
 
 --- WAIEI Coreのバージョンを取得
 --[[
@@ -56,14 +56,25 @@ local function SetSMVersion(self)
             __SMV__= 0
         end
     elseif n == 'outfox' then
-        if string.find(v, '0.5', 0, true) then
-        -- Alpha V
-            __SMV__= 530500
-        elseif string.find(v, '0.4', 0, true) then
-        -- Alpha 0.4.x
-            __SMV__= 530400
-        else
-            __SMV__= 5300
+        __SMV__= 5300
+        local spl_v = split('%.', v)
+        if #spl_v >= 2 then
+            spl_v[2] = split('[-.]', spl_v[2])[1]
+            if spl_v[1] == '0' then
+                if tonumber(spl_v[2]) >= 6 then
+                    -- Beta
+                    __SMV__= 600000
+                elseif spl_v[2] == '5' then
+                    -- Alpha 0.5
+                    __SMV__= 530500
+                elseif spl_v[2] == '4' then
+                    -- Alpha 0.4.x
+                    __SMV__= 530401
+                end
+            elseif spl_v[1] == '4' then
+                -- 昔の0.4系は4.xxだった
+                __SMV__= 530400
+            end
         end
     elseif n == 'itgmania' then
         -- ITGMania
